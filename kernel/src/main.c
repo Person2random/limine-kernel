@@ -53,7 +53,15 @@ void kmain(void) {
 */
     graphics_init();
     terminal_init();
-    put_char(0,0, 'A', 0xFFFFFF, 0x000000);   
+    print("67");
+    for(int i = 0; i < 200; i++){
+        if(i % 2 == 0){
+            terminal_write("A");
+        }
+        else {
+            terminal_write("B");
+        }
+    }    
     // We're done, just hang...
     hcf();
 }
