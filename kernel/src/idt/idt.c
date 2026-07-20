@@ -42,5 +42,5 @@ void idt_init(void){
   }
   __asm__ volatile ("lidt %0": : "m"((idt_pointer)));
  // __asm__ volatile ("sti");
-    
+ // Dont place this until you have hardware interrupts
 }
