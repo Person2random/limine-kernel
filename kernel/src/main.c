@@ -1,9 +1,11 @@
+#include "./gdt/gdt.h"
 #include "./graphics/graphics.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <limine.h>
 #include "./terminal/terminal.h"
+#include "./idt/idt.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -53,15 +55,29 @@ void kmain(void) {
 */
     graphics_init();
     terminal_init();
-    print("67");
-    for(int i = 0; i < 200; i++){
-        if(i % 2 == 0){
-            terminal_write("A");
+    print("Welcome to tung tung larp OS");
+    print("Initilazing GDT...");
+    init_gdt();
+    print("GDT init");
+    print("Doing coding exercise");
+    int height = 5;
+    int start_col = 5;
+    int starcount = 0;
+    for(int i = 5; i > 0; i--){
+        for(int j = 0; j <= start_col; j++){
+            write_char(' ');
         }
-        else {
-            terminal_write("B");
+        for(int j = 0; j <= starcount; j++){
+            write_char('*');
         }
-    }    
+        starcount += 2;
+        start_col--;
+        print("");
+    }
+    print("\n^^^ This should be a triangle");
+    print("Initializng IDT...");
+    idt_init();
+    print("IDT init");
     // We're done, just hang...
     hcf();
 }

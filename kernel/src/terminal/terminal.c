@@ -57,6 +57,20 @@ void put_char(uint32_t x, uint32_t y, char c ,uint32_t fg, uint32_t bg){
 
 
 void write_char(char c){
+  if(c == '\n'){
+        cursor_y++;
+        cursor_x = 0;
+        return;
+    }
+  if(c == '\r'){
+      cursor_x = 0;
+      return;
+    }
+   if(c == '\t'){
+      cursor_x += 4;
+      return;
+    }
+  
   put_char(cursor_x,cursor_y,c,fg_default,bg_default);
   if(cursor_x + 1 == max_x){
     cursor_y++;
@@ -70,20 +84,7 @@ void write_char(char c){
 
 void terminal_write(char c[]){
   while(*c){
-     if(*c == '\n'){
-        cursor_y++;
-        cursor_x = 0;
-        continue;
-    }
-    if(*c == '\r'){
-      cursor_x = 0;
-      continue;
-    }
-    if(*c == '\t'){
-      cursor_x += 4;
-      continue;
-    }
-    write_char(*c);
+         write_char(*c);
     c++;
   }
 }
@@ -91,19 +92,6 @@ void terminal_write(char c[]){
 
 void print(char c[]){
   while(*c){
-    if(*c == '\n'){
-      cursor_y++;
-      cursor_x = 0;
-      continue;
-    }
-    if(*c == '\r'){
-      cursor_x = 0;
-      continue;
-    }
-    if(*c == '\t'){
-      cursor_x += 4;
-      continue;
-    }
    write_char(*c);
    c++;
    
