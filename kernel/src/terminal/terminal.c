@@ -1,8 +1,9 @@
+#include "terminal.h"
 #include "./font.h"
 #include "../graphics/graphics.h"
 #include <stddef.h>
 #include <stdint.h>
-
+#include <stdbool.h>
 
 // array size is 4100unsigned char *font_ptr;
 uint32_t fg_default;
@@ -15,8 +16,9 @@ uint32_t cursor_x;
 uint32_t cursor_y;
 uint32_t max_x;
 uint32_t max_y;
-void terminal_init(){
-
+bool debug_mode;
+void terminal_init(bool debug){
+  debug_mode = debug;
   mode = font[2];
   charsize = font[3];
   glyphs = font + 4;
@@ -28,10 +30,16 @@ void terminal_init(){
     put_pixel(10, 10, 0x00FF00);
   else
     put_pixel(10, 10, 0xFF0000);
-    fg_default = 0xFFFFFF;
-    bg_default = 0X000000;
+  fg_default = 0xFFFFFF;
+  bg_default = 0X000000;
 }
 
+void setbg(uint32_t bg){
+  bg_default = bg;
+}
+void setfg(uint32_t fg){
+  fg_default = fg;
+}
 
 void put_char(uint32_t x, uint32_t y, char c ,uint32_t fg, uint32_t bg){
     if(x >= max_x || y > max_y) return;
@@ -98,4 +106,12 @@ void print(char c[]){
   }
   cursor_y++;
   cursor_x = 0;
+}
+
+void debug_print(char c[]) {
+  if(debug_mode) print(c);
+}
+
+void debug_terminal_write(char c[]){
+  if(debug_mode) terminal_write(c);
 }

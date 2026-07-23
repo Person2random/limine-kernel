@@ -1,5 +1,6 @@
 #include "./gdt/gdt.h"
 #include "./graphics/graphics.h"
+#include "./mm/pmm.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -54,7 +55,7 @@ void kmain(void) {
     }
 */
     graphics_init();
-    terminal_init();
+    terminal_init(false);
     print("Welcome to tung tung larp OS");
     print("Initilazing GDT...");
     init_gdt();
@@ -78,6 +79,22 @@ void kmain(void) {
     print("Initializng IDT...");
     idt_init();
     print("IDT init");
+    print("Initializing PMM...");
+    init_pmm();
+    print("PMM init");
+
+    print("Starting PMM test");
+    uint64_t a = pmm_alloc_page();
+    uint64_t b = pmm_alloc_page();
+    pmm_free_page(a);
+    uint64_t c = pmm_alloc_page();
+    if(c != a){
+        print("Something is wrong with paging. It isnt safe to continue");
+        __asm__ volatile("sti;hlt");
+    }
+    pmm_free_page(b);
+    pmm_free_page(c);
+    print("PMM test successful");
     // We're done, just hang...
     hcf();
 }
