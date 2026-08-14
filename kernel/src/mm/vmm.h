@@ -4,4 +4,5 @@
 
 void vmm_map(uint64_t virt, uint64_t physical);
 void vmm_unmap(uint64_t virt);
+uint64_t vmm_get_phys(uint64_t virt);
 #endif

@@ -1,3 +1,4 @@
+#include "../kstd/kstd.h"
 #include "../pic/pic.h"
 #include "../terminal/terminal.h"
 #include <stdint.h>
@@ -15,7 +16,7 @@ struct interrupt_frame {
     uint64_t rflags;
 };
 
-
+//Kosom this handler its unused now
 void pit_handler(void){
   debug_print("Tick"); //Dont actually keep this
  // pic_eoi(0); Replace with IO/APIC EOI
@@ -27,10 +28,25 @@ void exception_handler(struct interrupt_frame* frame){
   while(1);
 }
 
+void pf_handler(struct interrupt_frame* frame){
+  uint64_t cr2;
+  asm volatile("mov %%cr2, %0" : "=r"(cr2));
+
+  debug_print("PF");
+  char buf[32];
+  utoa(cr2, buf);
+  debug_print(buf);
+  utoa(frame->error_code, buf);
+  debug_print(buf);
+
+  while (1) {
+    __asm__ volatile("hlt");
+  }
+}
 
 void interrupt_handler(struct interrupt_frame* frame){
   if(frame->exception == 14){
-    print("PF");
+    pf_handler(frame);
   }
   if(frame->exception < 32){
     exception_handler(frame);

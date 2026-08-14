@@ -59,7 +59,7 @@ void kmain(void) {
     }
 */
     graphics_init();
-    terminal_init(false);
+    terminal_init(true);
     print("Welcome to tung tung larp OS");
     print("Initilazing GDT...");
     init_gdt();
@@ -113,8 +113,6 @@ void kmain(void) {
     }
     vmm_unmap(virt);
     *ptr = 69420;
-
-    print("You shouldnt see this");
-
+    
     hcf();
 }

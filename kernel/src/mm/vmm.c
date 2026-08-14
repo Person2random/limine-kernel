@@ -96,3 +96,49 @@ void vmm_unmap(uint64_t virt){
   pt[pt_index] = 0;
   asm volatile ("invlpg (%0)" :: "r"(virt) : "memory");
 }
+
+
+uint64_t vmm_get_phys(uint64_t virt){
+  uint64_t hhdm_offset = hhdm_request.response->offset;
+  uint64_t pml4_index = (virt >> 39) & 0x1FF;
+  uint64_t pdpt_index = (virt >> 30) & 0x1FF;
+  uint64_t pd_index = (virt >> 21) & 0x1FF;
+  uint64_t pt_index = (virt >> 12) & 0x1FF;
+  uint64_t offset = virt & 0xFFF;
+  uint64_t cr3;
+  asm volatile ("mov %%cr3, %0": "=r"(cr3));
+  uint64_t pml_phys = cr3 & ~0xFFFULL;
+  uint64_t* pml = (uint64_t*)(pml_phys + hhdm_offset);
+  uint64_t pml_entry = pml[pml4_index];
+  if(!(pml_entry & 1)){
+    return 0; //This is a bit bad code because it gives you 0 silently without fail
+    }
+  uint64_t pdpt_phys = pml_entry & ~0xFFFULL;
+  uint64_t* pdpt = (uint64_t*)(pdpt_phys+hhdm_offset);
+
+  uint64_t pdpt_entry = pdpt[pdpt_index];
+
+  if(!(pdpt_entry & 1)){
+    return 0; //Genuinely, This will bite me in the ass later but I cant bother
+  }
+
+  uint64_t pd_phys = pdpt_entry & ~0xFFFULL;
+  uint64_t* pd = (uint64_t*) (pd_phys + hhdm_offset);
+
+  uint64_t pd_entry = pd[pd_index];
+
+  if(!(pd_entry & 1)){
+    return 0; //Not even going to talk about it
+  }
+
+  uint64_t pt_phys = pd_entry & ~0XFFFULL;
+  uint64_t* pt = (uint64_t*)(pt_phys + hhdm_offset);
+
+  uint64_t pt_entry = pt[pt_index];
+
+  if(!(pt_entry & 1)){
+    return 0; //Did you know memory safety bugs account for 70 percent of all security issues on windows? Thats probably a good reason to rethink this return value
+  }
+  uint64_t page_phys = pt_entry & ~0xFFFULL;
+  return page_phys | offset;
+}
