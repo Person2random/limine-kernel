@@ -2,7 +2,7 @@
 bits 64
 
 global isr_stub_table
-extern exception_handler
+extern interrupt_handler
 
 
 ; Exceptions WITHOUT CPU error code
@@ -18,6 +18,13 @@ isr_stub_%+%1:
 %macro isr_err_stub 1
 isr_stub_%+%1:
     push qword %1       ; exception number
+    jmp isr_common_stub
+%endmacro
+
+%macro irq_stub 1
+isr_stub_%+%1:
+    push qword 0
+    push qword %1
     jmp isr_common_stub
 %endmacro
 
@@ -45,7 +52,7 @@ isr_common_stub:
     ; Pass pointer to stack frame as first argument (System V ABI)
     mov rdi, rsp
 
-    call exception_handler
+    call interrupt_handler
 
 
     ; Restore registers
@@ -117,7 +124,7 @@ isr_no_err_stub 29
 isr_err_stub 30
 
 isr_no_err_stub 31
-
+irq_stub 32
 
 
 ; Table of addresses for IDT setup
@@ -125,7 +132,7 @@ isr_no_err_stub 31
 isr_stub_table:
 
 %assign i 0
-%rep 32
+%rep 33
     dq isr_stub_%+i
 %assign i i+1
 %endrep

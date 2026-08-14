@@ -8,6 +8,9 @@
 #include "./terminal/terminal.h"
 #include "./idt/idt.h"
 #include "./mm/vmm.h"
+#include "./pic/pic.h"
+#include "./devices/pit/pit.h"
+
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -56,7 +59,7 @@ void kmain(void) {
     }
 */
     graphics_init();
-    terminal_init(true);
+    terminal_init(false);
     print("Welcome to tung tung larp OS");
     print("Initilazing GDT...");
     init_gdt();
@@ -106,7 +109,12 @@ void kmain(void) {
     if (*ptr == 0xDEADBEEFCAFEBABE) {
       debug_terminal_write("VMM MAP WORKS\n");
     } else {
-        debug_terminal_write("VMM MAP FAILED\n");
+      debug_terminal_write("VMM MAP FAILED\n");
     }
+    vmm_unmap(virt);
+    *ptr = 69420;
+
+    print("You shouldnt see this");
+
     hcf();
 }

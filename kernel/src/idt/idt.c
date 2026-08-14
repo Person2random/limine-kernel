@@ -36,7 +36,7 @@ static bool vectors[256];
 void idt_init(void){
   idt_pointer.base = (uintptr_t)&idt[0];
   idt_pointer.limit = (uint16_t)sizeof(idt_entry) * 256 - 1;
-  for(uint8_t vector = 0; vector < 32; vector++){
+  for(uint8_t vector = 0; vector < 33; vector++){
     idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
     vectors[vector] = true;
   }
