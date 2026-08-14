@@ -100,19 +100,47 @@ void kmain(void) {
     pmm_free_page(c);
     print("PMM test successful");
     // We're done, just hang...
-    uint64_t phys = pmm_alloc_page();
+    uint64_t phys1 = pmm_alloc_page();
+    uint64_t phys2 = pmm_alloc_page();
 
-    uint64_t virt = 0x40000000;
-    vmm_map(virt, phys);
-    uint64_t *ptr = (uint64_t *)virt;
-    *ptr = 0xDEADBEEFCAFEBABE;
-    if (*ptr == 0xDEADBEEFCAFEBABE) {
-      debug_terminal_write("VMM MAP WORKS\n");
+    uint64_t virt1 = 0x40000000;
+    uint64_t virt2 = 0x40001000; // One full page after virt1
+
+    vmm_map(virt1, phys1);
+    vmm_map(virt2, phys2);
+
+    uint64_t *ptr1 = (uint64_t *)virt1;
+    uint64_t *ptr2 = (uint64_t *)virt2;
+
+    /* Test both mappings */
+    *ptr1 = 0xDEADBEEFCAFEBABE;
+    *ptr2 = 0x123456789ABCDEF0;
+
+    if (*ptr1 == 0xDEADBEEFCAFEBABE && *ptr2 == 0x123456789ABCDEF0) {
+      debug_terminal_write("BOTH MAPS WORK\n");
     } else {
-      debug_terminal_write("VMM MAP FAILED\n");
+      debug_terminal_write("MAP FAILED\n");
     }
-    vmm_unmap(virt);
-    *ptr = 69420;
+
+    /* Remove the first mapping */
+    vmm_unmap(virt1);
+
+    /* The second mapping should still work */
+    if (*ptr2 == 0x123456789ABCDEF0) {
+      debug_terminal_write("SECOND MAP SURVIVED\n");
+    } else {
+      debug_terminal_write("SECOND MAP BROKEN\n");
+    }
+
+    /* Remove the second mapping.
+     * Now the PT, PD, and PDPT should all become empty
+     * and be reclaimed by vmm_unmap().
+     */
+    vmm_unmap(virt2);
+
+    debug_terminal_write("CLEANUP COMPLETED\n");
+
+
     
     hcf();
 }

@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "../requests/requests.h"
 #include "./pmm.h"
+#include <stdbool.h>
+#include <stddef.h>
 void vmm_map(uint64_t virt, uint64_t physical){
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;
@@ -57,6 +59,18 @@ void vmm_map(uint64_t virt, uint64_t physical){
 }
 
 
+
+bool table_empty(uint64_t* table){
+  for(size_t i = 0; i < 512; i++){
+    if((table[i]&1)){
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
 void vmm_unmap(uint64_t virt){
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;
@@ -95,6 +109,20 @@ void vmm_unmap(uint64_t virt){
 
   pt[pt_index] = 0;
   asm volatile ("invlpg (%0)" :: "r"(virt) : "memory");
+
+  if(table_empty(pt)){
+    pd[pd_index] = 0;
+    pmm_free_page(pt_phys);
+  }
+  if(table_empty(pd)){
+    pdpt[pdpt_index] = 0;
+    pmm_free_page(pd_phys);
+  }
+  if(table_empty(pdpt)){
+    pml4[pml4_index] = 0;
+    pmm_free_page(pdpt_phys);
+  }
+  
 }
 
 
