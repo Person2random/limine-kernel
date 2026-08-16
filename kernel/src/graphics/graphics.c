@@ -21,3 +21,8 @@ void put_pixel(uint32_t x, uint32_t y, uint32_t color){
 
  fb_address[y*pitch_stride + x] = color ;
 }
+
+void terminal_scroll(void) {
+ uint32_t* framebuffer = (uint32_t*)fb->address;
+ size_t pitch = fb->pitch;
+  memset(framebuffer, 0, pitch * height); }

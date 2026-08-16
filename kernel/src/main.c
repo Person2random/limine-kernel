@@ -10,7 +10,7 @@
 #include "./mm/vmm.h"
 #include "./pic/pic.h"
 #include "./devices/pit/pit.h"
-
+#include "mm/valloc/valloc.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -63,31 +63,12 @@ void kmain(void) {
     print("Welcome to tung tung larp OS");
     print("Initilazing GDT...");
     init_gdt();
-    print("GDT init");
-    print("Doing coding exercise");
-    int height = 5;
-    int start_col = 5;
-    int starcount = 0;
-    for(int i = 5; i > 0; i--){
-        for(int j = 0; j <= start_col; j++){
-            write_char(' ');
-        }
-        for(int j = 0; j <= starcount; j++){
-            write_char('*');
-        }
-        starcount += 2;
-        start_col--;
-        print("");
-    }
-    print("\n^^^ This should be a triangle");
     print("Initializng IDT...");
     idt_init();
-    print("IDT init");
     print("Initializing PMM...");
     init_pmm();
-    print("PMM init");
 
-    print("Starting PMM test");
+    debug_print("Starting PMM test");
     uint64_t a = pmm_alloc_page();
     uint64_t b = pmm_alloc_page();
     pmm_free_page(a);
@@ -100,47 +81,26 @@ void kmain(void) {
     pmm_free_page(c);
     print("PMM test successful");
     // We're done, just hang...
-    uint64_t phys1 = pmm_alloc_page();
-    uint64_t phys2 = pmm_alloc_page();
+    valloc_init();
+    void *e = valloc(1);
+    void *f = valloc(2);
+    void *g = valloc(4);
 
-    uint64_t virt1 = 0x40000000;
-    uint64_t virt2 = 0x40001000; // One full page after virt1
+   // valloc_dump();
 
-    vmm_map(virt1, phys1);
-    vmm_map(virt2, phys2);
+    vfree(f);
 
-    uint64_t *ptr1 = (uint64_t *)virt1;
-    uint64_t *ptr2 = (uint64_t *)virt2;
+    //valloc_dump();
 
-    /* Test both mappings */
-    *ptr1 = 0xDEADBEEFCAFEBABE;
-    *ptr2 = 0x123456789ABCDEF0;
+    void *d = valloc(1);
 
-    if (*ptr1 == 0xDEADBEEFCAFEBABE && *ptr2 == 0x123456789ABCDEF0) {
-      debug_terminal_write("BOTH MAPS WORK\n");
-    } else {
-      debug_terminal_write("MAP FAILED\n");
-    }
+    //valloc_dump();
 
-    /* Remove the first mapping */
-    vmm_unmap(virt1);
+    vfree(e);
+    vfree(g);
+    vfree(d);
 
-    /* The second mapping should still work */
-    if (*ptr2 == 0x123456789ABCDEF0) {
-      debug_terminal_write("SECOND MAP SURVIVED\n");
-    } else {
-      debug_terminal_write("SECOND MAP BROKEN\n");
-    }
-
-    /* Remove the second mapping.
-     * Now the PT, PD, and PDPT should all become empty
-     * and be reclaimed by vmm_unmap().
-     */
-    vmm_unmap(virt2);
-
-    debug_terminal_write("CLEANUP COMPLETED\n");
-
-
-    
+    //valloc_dump();
+    print("Tests successful");
     hcf();
 }

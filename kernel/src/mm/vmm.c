@@ -3,7 +3,8 @@
 #include "./pmm.h"
 #include <stdbool.h>
 #include <stddef.h>
-void vmm_map(uint64_t virt, uint64_t physical){
+#include "vmm.h"
+uint64_t* vmm_get_pte(uint64_t virt, uint64_t* pml_p){ //Finally writing a proper traversal function
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;
   uint64_t pdpt_index = (virt >> 30) & 0x1FF;
@@ -14,6 +15,52 @@ void vmm_map(uint64_t virt, uint64_t physical){
   asm volatile ("mov %%cr3, %0": "=r"(cr3));
   uint64_t pml_phys = cr3 & ~0xFFFULL;
   uint64_t* pml4 = (uint64_t*) (pml_phys + hhdm_offset);
+  if(pml_p != 0){
+    pml4 = pml_p;
+    pml_phys = (uint64_t)pml4 - hhdm_offset;
+  }
+
+  uint64_t pml_entry = pml4[pml4_index];
+
+  if(!(pml_entry & 1)){
+    return 0;
+  }
+
+  uint64_t pdpt_phys = pml_entry & ~0xFFFULL;
+  uint64_t* pdpt = (uint64_t*)(pdpt_phys + hhdm_offset);
+
+  uint64_t pdpt_entry = pdpt[pdpt_index];
+  if(!(pdpt_entry & 1)){
+    return 0;
+  }
+  uint64_t pd_phys = pdpt_entry & ~0xFFFULL;
+  uint64_t* pd = (uint64_t*)(pd_phys + hhdm_offset);
+
+  uint64_t pd_entry = pd[pd_index];
+  if(!(pd_entry & 1)){
+    return 0;
+  }
+
+  uint64_t pt_phys = pd_entry & ~0xFFFULL;
+  uint64_t* pt = (uint64_t*)(pt_phys + hhdm_offset);
+
+  return &(pt[pt_index]);
+}
+void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
+  uint64_t hhdm_offset = hhdm_request.response->offset;
+  uint64_t pml4_index = (virt >> 39) & 0x1FF;
+  uint64_t pdpt_index = (virt >> 30) & 0x1FF;
+  uint64_t pd_index = (virt >> 21) & 0x1FF;
+  uint64_t pt_index = (virt >> 12) & 0x1FF;
+  uint64_t offset = virt & 0xFFF;
+  uint64_t cr3;
+  asm volatile ("mov %%cr3, %0": "=r"(cr3));
+  uint64_t pml_phys = cr3 & ~0xFFFULL;
+  uint64_t* pml4 = (uint64_t*) (pml_phys + hhdm_offset);
+  if(pml_p != 0){
+    pml4 = pml_p;
+    pml_phys = (uint64_t)pml4 - hhdm_offset;
+  }
   uint64_t pml_entry = pml4[pml4_index];
   uint64_t pdpt;
   uint64_t pdpt_phys;
@@ -71,7 +118,7 @@ bool table_empty(uint64_t* table){
 
 
 
-void vmm_unmap(uint64_t virt){
+void vmm_unmap(uint64_t virt,uint64_t* pml_p){
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;
   uint64_t pdpt_index = (virt >> 30) & 0x1FF;
@@ -82,6 +129,10 @@ void vmm_unmap(uint64_t virt){
   asm volatile ("mov %%cr3, %0": "=r"(cr3));
   uint64_t pml_phys = cr3 & ~0xFFFULL;
   uint64_t* pml4 = (uint64_t*) (pml_phys + hhdm_offset);
+  if(pml_p != 0){
+    pml4 = pml_p;
+    pml_phys = (uint64_t)pml4 - hhdm_offset;
+  }
   uint64_t pml_entry = pml4[pml4_index];
   if(!(pml_entry & 1)){
     return;
@@ -126,7 +177,7 @@ void vmm_unmap(uint64_t virt){
 }
 
 
-uint64_t vmm_get_phys(uint64_t virt){
+uint64_t vmm_get_phys(uint64_t virt, uint64_t* pml_p){
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;
   uint64_t pdpt_index = (virt >> 30) & 0x1FF;
@@ -137,6 +188,10 @@ uint64_t vmm_get_phys(uint64_t virt){
   asm volatile ("mov %%cr3, %0": "=r"(cr3));
   uint64_t pml_phys = cr3 & ~0xFFFULL;
   uint64_t* pml = (uint64_t*)(pml_phys + hhdm_offset);
+  if(pml_p != 0){
+    pml = pml_p;
+    pml_phys = (uint64_t)pml - hhdm_offset;
+  }
   uint64_t pml_entry = pml[pml4_index];
   if(!(pml_entry & 1)){
     return 0; //This is a bit bad code because it gives you 0 silently without fail
@@ -169,4 +224,52 @@ uint64_t vmm_get_phys(uint64_t virt){
   }
   uint64_t page_phys = pt_entry & ~0xFFFULL;
   return page_phys | offset;
+}
+
+void vmm_set_flags(uint64_t virt,uint64_t flags,uint64_t* pml_p){
+  uint64_t hhdm_offset = hhdm_request.response->offset;
+  uint64_t pml4_index = (virt >> 39) & 0x1FF;
+  uint64_t pdpt_index = (virt >> 30) & 0x1FF;
+  uint64_t pd_index = (virt >> 21) & 0x1FF;
+  uint64_t pt_index = (virt >> 12) & 0x1FF;
+  uint64_t offset = virt & 0xFFF;
+  uint64_t cr3;
+  asm volatile ("mov %%cr3, %0": "=r"(cr3));
+  uint64_t pml_phys = cr3 & ~0xFFFULL;
+  uint64_t* pml = (uint64_t*)(pml_phys + hhdm_offset);
+  if(pml_p != 0){
+    pml = pml_p;
+    pml_phys = (uint64_t)pml - hhdm_offset;
+  }
+  uint64_t pml_entry = pml[pml4_index];
+  if(!(pml_entry & 1)){
+    return; //Ahh not again
+  }
+  uint64_t pdpt_phys = pml_entry & ~0xFFFULL; //Doesnt this constant traversal seem boring?  I should probably write a helper function sometime
+  uint64_t* pdpt = (uint64_t*)(pdpt_phys + hhdm_offset);
+
+  uint64_t pdpt_entry = pdpt[pdpt_index];
+  if(!(pdpt_entry & 1)){
+    return; //Im starting to feel like the narrator from the stanley parable here
+  }
+  uint64_t pd_phys = pdpt_entry & ~0xFFFULL; //Are any of my comments useful?
+  uint64_t* pd = (uint64_t*)(pd_phys + hhdm_offset);
+
+  uint64_t pd_entry = pd[pd_index];
+  if(!(pd_entry & 1)){
+    return; //Get out of the broom closet!!!!
+  }
+
+  uint64_t pt_phys = pd_entry & ~0xFFFULL;
+  uint64_t* pt = (uint64_t*)(pt_phys + hhdm_offset);
+
+  uint64_t pt_entry = pt[pt_index];
+
+  if(!(pt_entry & 1)){
+    return;
+  }
+
+  pt[pt_index] = (pt_entry & ~VMM_FLAG_MASK) | (flags & VMM_FLAG_MASK);
+
+  asm volatile("invlpg (%0)" ::"r"(virt) : "memory");
 }

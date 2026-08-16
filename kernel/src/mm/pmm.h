@@ -4,4 +4,5 @@
 void init_pmm(void);
 void pmm_free_page(uint64_t address);
 uint64_t pmm_alloc_page(void);
+uint64_t pmm_get_max_addr_phys();
 #endif
