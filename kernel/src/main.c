@@ -13,6 +13,7 @@
 #include "./lapic/lapic.h"
 #include "mm/valloc/valloc.h"
 #include "./kstd/kstd.h"
+#include "./lapic/lapic_timer.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -26,7 +27,7 @@
 static void hcf(void) {
     for (;;) {
 #if defined (__x86_64__)
-        asm ("hlt");
+        asm ("sti;hlt");
 #elif defined (__aarch64__) || defined (__riscv)
         asm ("wfi");
 #elif defined (__loongarch64)
@@ -73,9 +74,7 @@ void kmain(void) {
     print("Valloc init");
     lapic_init();
     print("Lapic init");
-    uint32_t id = lapic_read(0x30);
-    char buf[32];
-    int_to_base_string(id, buf, 16);
-    print(buf);
+    lapic_timer_init(100000);
+    print("lapic timer init");
     hcf();
 }

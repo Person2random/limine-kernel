@@ -1,6 +1,7 @@
 #include "../kstd/kstd.h"
 #include "../pic/pic.h"
 #include "../terminal/terminal.h"
+#include "../lapic/lapic.h"
 #include <stdint.h>
 struct interrupt_frame {
     uint64_t r15, r14, r13, r12;
@@ -17,9 +18,9 @@ struct interrupt_frame {
 };
 
 //Kosom this handler its unused now
-void pit_handler(void){
+void lapic_timer_handler(void){
   debug_print("Tick"); //Dont actually keep this
- // pic_eoi(0); Replace with IO/APIC EOI
+  lapic_eoi();
 }
 
 __attribute__((noreturn))
@@ -75,7 +76,7 @@ void interrupt_handler(struct interrupt_frame* frame){
   }
   switch (frame->exception) {
     case 32:
-      pit_handler();
+      lapic_timer_handler();
       break;
   }
   return;

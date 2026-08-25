@@ -14,7 +14,7 @@
 void lapic_init();
 uint32_t lapic_read(uint32_t reg);
 void lapic_write(uint32_t reg, uint32_t value);
-;
+void lapic_eoi(void);
 ;
 ;
 ;
