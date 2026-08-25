@@ -103,6 +103,9 @@ void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
   }
  uint64_t* pt_table = (uint64_t*)pt;
  pt_table[pt_index] = physical | 1| 2;
+ 
+  asm volatile("invlpg (%0)" ::"r"(virt) : "memory");
+
 }
 
 

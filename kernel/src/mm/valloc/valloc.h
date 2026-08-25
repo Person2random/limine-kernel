@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#define VALLOC_BASE 0xFFFF800000000000ULL
 typedef struct valloc_range{
   uint64_t start;
   uint64_t length;

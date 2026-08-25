@@ -19,4 +19,18 @@
 void vmm_map(uint64_t virt, uint64_t physical,uint64_t* pml_p);
 void vmm_unmap(uint64_t virt,uint64_t* pml_p);
 uint64_t vmm_get_phys(uint64_t virt, uint64_t* pml_p);
+void vmm_set_flags(uint64_t virt,uint64_t flags,uint64_t* pml_p);
+uint64_t* vmm_get_pte(uint64_t virt, uint64_t* pml_p);
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
 #endif

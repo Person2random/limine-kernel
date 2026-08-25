@@ -10,7 +10,9 @@
 #include "./mm/vmm.h"
 #include "./pic/pic.h"
 #include "./devices/pit/pit.h"
+#include "./lapic/lapic.h"
 #include "mm/valloc/valloc.h"
+#include "./kstd/kstd.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -65,42 +67,15 @@ void kmain(void) {
     init_gdt();
     print("Initializng IDT...");
     idt_init();
-    print("Initializing PMM...");
     init_pmm();
-
-    debug_print("Starting PMM test");
-    uint64_t a = pmm_alloc_page();
-    uint64_t b = pmm_alloc_page();
-    pmm_free_page(a);
-    uint64_t c = pmm_alloc_page();
-    if(c != a){
-        print("Something is wrong with paging. It isnt safe to continue");
-        __asm__ volatile("sti;hlt");
-    }
-    pmm_free_page(b);
-    pmm_free_page(c);
-    print("PMM test successful");
-    // We're done, just hang...
+    print("PMM init");
     valloc_init();
-    void *e = valloc(1);
-    void *f = valloc(2);
-    void *g = valloc(4);
-
-   // valloc_dump();
-
-    vfree(f);
-
-    //valloc_dump();
-
-    void *d = valloc(1);
-
-    //valloc_dump();
-
-    vfree(e);
-    vfree(g);
-    vfree(d);
-
-    //valloc_dump();
-    print("Tests successful");
+    print("Valloc init");
+    lapic_init();
+    print("Lapic init");
+    uint32_t id = lapic_read(0x30);
+    char buf[32];
+    int_to_base_string(id, buf, 16);
+    print(buf);
     hcf();
 }

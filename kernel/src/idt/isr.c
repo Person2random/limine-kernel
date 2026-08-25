@@ -50,15 +50,15 @@ void pf_handler(struct interrupt_frame* frame) {
     debug_print("PAGE FAULT\n");
 
     debug_print("CR2: ");
-    utoa(cr2, buf);
+    int_to_base_string(cr2, buf, 16);
     debug_print(buf);
 
     debug_print("\nERROR: ");
-    utoa(frame->error_code, buf);
+    int_to_base_string(frame->error_code, buf, 16);
     debug_print(buf);
 
     debug_print("\nRIP: ");
-    utoa(frame->rip, buf);
+    int_to_base_string(frame->rip, buf, 16);
     debug_print(buf);
 
     debug_print("\n");

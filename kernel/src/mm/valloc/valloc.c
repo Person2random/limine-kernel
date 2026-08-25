@@ -17,7 +17,7 @@ void valloc_init(){
   uint64_t page =  pmm_alloc_page();
   valloc_head = (struct valloc_range*)(page+hhdm_offset);
   valloc_range first_entry;
-  first_entry.start = end;
+  first_entry.start = VALLOC_BASE;
   first_entry.length = 0x10000000000; //One terabyte of address space, Try making this 512 bytes one time and running the kernel again
   first_entry.next = 0;
   first_entry.free = true;

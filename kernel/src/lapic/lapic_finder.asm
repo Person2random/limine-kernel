@@ -13,3 +13,13 @@ get_lapic_base:
 
 
         ret
+
+
+global get_lapic_msr
+
+get_lapic_msr:
+    mov ecx, 0x1B
+    rdmsr
+    shl rdx, 32
+    or rax, rdx
+    ret
