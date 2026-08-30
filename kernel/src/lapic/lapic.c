@@ -9,8 +9,8 @@ extern uint64_t get_lapic_base(void);
 extern uint64_t get_lapic_msr(void);
 uint64_t lapic_virt;
 void lapic_init(){
-  print("a");
-  //lapic_virt = 0xFFFF800000000000; Keep this here for when youre testing, Total hours spent on lapic is probably in the hundreds now
+  // lapic_virt = 0xFFFF800000000000; Keep this here for when youre testing,
+  // Total hours spent on lapic is probably in the hundreds now
   lapic_virt = (uint64_t)valloc(1);
   char buf[32];
   if(lapic_virt == 0){

@@ -276,3 +276,22 @@ void vmm_set_flags(uint64_t virt,uint64_t flags,uint64_t* pml_p){
 
   asm volatile("invlpg (%0)" ::"r"(virt) : "memory");
 }
+
+/*!
+*Finds a non-present virtual address range of 1 TiB
+*This function makes no new mappings or reservations
+*@return The start of the 1 TiB range as a virtual address
+*/
+uint64_t valloc_find_arena(){
+  uint64_t hhdm_offset = hhdm_request.response->offset;
+  uint64_t cr3;
+  asm volatile ("mov %%cr3, %0": "=r"(cr3));
+  uint64_t pml_phys = cr3 & ~0xFFFULL;
+  uint64_t* pml = (uint64_t*)(pml_phys + hhdm_offset);
+  for (size_t i = 256; i < 511; i++) {
+    if(pml[i] & 1) continue;
+    if(pml[i+1] & 1) continue;
+    return ((uint64_t)i << 39) | 0xFFFF000000000000ULL;
+  }
+    
+}

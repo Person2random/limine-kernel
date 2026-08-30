@@ -74,7 +74,5 @@ void kmain(void) {
     print("Valloc init");
     lapic_init();
     print("Lapic init");
-    lapic_timer_init(100000);
-    print("lapic timer init");
     hcf();
 }

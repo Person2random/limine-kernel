@@ -16,6 +16,7 @@ typedef struct page_descriptor {
   uint64_t page_pointer; //Page pointer
 } page_descriptor;
 #define RANGES_PER_PAGE (4096 / sizeof(struct valloc_range))
+#define PAGE_DESC_COUNT 256
 void valloc_dump();
 void valloc_init();
 valloc_range *new_range_descriptor();

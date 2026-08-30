@@ -6,18 +6,18 @@
 #include <stdbool.h>
 #include "../../terminal/terminal.h"
 #include "../../kstd/kstd.h"
+#include "../vmm.h"
 valloc_range* valloc_head;
-page_descriptor descriptors[128];
+page_descriptor descriptors[PAGE_DESC_COUNT];
 void valloc_init(){
-  memset(descriptors,0,sizeof(page_descriptor)*128);
+  uint64_t base = valloc_find_arena();
+  if(!base) print("Holy fuck you dont have a free PML4E how does that even happen");
+  memset(descriptors,0,sizeof(page_descriptor)*PAGE_DESC_COUNT);
   uint64_t hhdm_offset = hhdm_request.response->offset;
-  uint64_t max_phys = pmm_get_max_addr_phys();
-
-  uint64_t end = hhdm_offset + max_phys;
-  uint64_t page =  pmm_alloc_page();
-  valloc_head = (struct valloc_range*)(page+hhdm_offset);
+  uint64_t page = pmm_alloc_page();
+  valloc_head = (struct valloc_range *)(page + hhdm_offset);
   valloc_range first_entry;
-  first_entry.start = VALLOC_BASE;
+  first_entry.start = base;
   first_entry.length = 0x10000000000; //One terabyte of address space, Try making this 512 bytes one time and running the kernel again
   first_entry.next = 0;
   first_entry.free = true;
@@ -30,14 +30,14 @@ void valloc_init(){
 valloc_range *new_range_descriptor() {
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint16_t pmm_slot = 6969;
-  for(size_t i = 0; i < 128; i++){
-    if(descriptors[i].used <128 && descriptors[i].page_pointer != 0){
+  for(size_t i = 0; i < PAGE_DESC_COUNT; i++){
+    if(descriptors[i].used < RANGES_PER_PAGE && descriptors[i].page_pointer != 0){
       pmm_slot = i;
       break;
     }
   }
   if(pmm_slot == 6969){
-    for(size_t i = 0; i < 128; i++){
+    for(size_t i = 0; i < PAGE_DESC_COUNT; i++){
       if(descriptors[i].page_pointer == 0){
         descriptors[i].page_pointer = pmm_alloc_page();
         pmm_slot = i;

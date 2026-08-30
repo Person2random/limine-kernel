@@ -21,7 +21,12 @@ void vmm_unmap(uint64_t virt,uint64_t* pml_p);
 uint64_t vmm_get_phys(uint64_t virt, uint64_t* pml_p);
 void vmm_set_flags(uint64_t virt,uint64_t flags,uint64_t* pml_p);
 uint64_t* vmm_get_pte(uint64_t virt, uint64_t* pml_p);
-;
+/*!
+*Finds a non-present virtual address range of 1 TiB
+*This function makes no new mappings or reservations
+*@return The start of the 1 TiB range as a virtual address
+*/
+uint64_t valloc_find_arena();
 ;
 ;
 ;
