@@ -27,16 +27,16 @@ __attribute__((noreturn))
 void exception_handler(struct interrupt_frame* frame){
   char buf[32];
   debug_print("Ouu shi we got an exception");
-  utoa(frame->exception, buf);
+  int_to_base_string(frame->exception, buf,16);
   debug_terminal_write("Exception: ");
   debug_print(buf);
-  utoa(frame->error_code, buf);
+  int_to_base_string(frame->error_code, buf,16);
   debug_terminal_write("Error code: ");
   debug_print(buf);
-  utoa(frame->rip, buf);
+  int_to_base_string(frame->rip, buf,16);
   debug_terminal_write("RIP: ");
   debug_print(buf);
-  utoa(frame->cs, buf);
+  int_to_base_string(frame->cs, buf,16);
   debug_terminal_write("CS: ");
   debug_print(buf);
   __asm__ volatile("cli;hlt");
