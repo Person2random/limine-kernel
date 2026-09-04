@@ -2,6 +2,8 @@
 #include "../pic/pic.h"
 #include "../terminal/terminal.h"
 #include "../lapic/lapic.h"
+#include "../lapic/lapic_timer.h"
+#include "../timer/timer.h"
 #include <stdint.h>
 struct interrupt_frame {
     uint64_t r15, r14, r13, r12;

@@ -16,6 +16,7 @@
 #include "./lapic/lapic_timer.h"
 #include "./cpu/cpuid.h"
 #include "./devices/tsc/tsc.h"
+#include "./timer/timer.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -78,19 +79,7 @@ void kmain(void) {
     print("Lapic init");
     init_tsc();
     print("TSC timer init");
-    uint64_t start = rdtsc();
-    uint64_t delay = 5 * tsc_get_freq();
-    while (rdtsc() < start + delay) {
-        __asm__ volatile("pause");
-    }
-    
-    uint64_t end = rdtsc();
-
-    uint64_t tick_diff = end-start;
-    uint64_t freq = tsc_get_freq();
-    char buf[32];
-    uint64_t seconds = tick_diff / freq;
-    int_to_base_string(seconds, buf, 10);
-    print(buf);
+    sleep(5000);
+    print("Done");
     hcf();
 }

@@ -11,6 +11,7 @@
 #define LAPIC_INITIAL_COUNT   0x380
 #define LAPIC_CURRENT_COUNT   0x390
 #define LAPIC_DIVIDE_CONFIG   0x3E0
+#define TSC_DEADLINE          0x6E0
 void lapic_init();
 uint32_t lapic_read(uint32_t reg);
 void lapic_write(uint32_t reg, uint32_t value);

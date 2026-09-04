@@ -12,9 +12,9 @@
 #define LAPIC_TIMER_VECTOR 32
 
 
-void lapic_timer_init(uint32_t initial_count);
-;
-;
+void lapic_timer_init();
+void deactivate_timer();
+void activate_timer();
 ;
 ;
 ;

@@ -23,17 +23,6 @@ uint64_t calibrate(){
 
   uint32_t elapsed_pit_ticks = 0xFFFF - current;
   uint64_t elapsed_tsc = end_tsc - start_tsc;
-  char buf[32];
-  int_to_base_string(start_tsc, buf, 10);
-  print(buf);
-  int_to_base_string(current, buf, 10);
-  print(buf);
-  int_to_base_string(end_tsc , buf, 10);
-  print(buf);
-  int_to_base_string(elapsed_pit_ticks, buf, 10);
-  print(buf);
-  int_to_base_string(elapsed_tsc, buf, 10);
-  print(buf);
   return (unsigned long)((elapsed_tsc * 1193182) / elapsed_pit_ticks);
 }
 
