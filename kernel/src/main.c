@@ -14,6 +14,7 @@
 #include "mm/valloc/valloc.h"
 #include "./kstd/kstd.h"
 #include "./lapic/lapic_timer.h"
+#include "./cpu/cpuid.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -74,5 +75,16 @@ void kmain(void) {
     print("Valloc init");
     lapic_init();
     print("Lapic init");
+    cpuid_regs_t regs;
+    cpuid(0, 0, &regs);
+    char vendor[13];
+    *(unsigned int *)&vendor[0] = regs.ebx;
+    *(unsigned int*)&vendor[4] = regs.edx;
+    *(unsigned int*)&vendor[8] = regs.ecx;
+    print(vendor);
+    uint32_t max = regs.eax;
+    char buf[32];
+    int_to_base_string(max, buf, 10);
+    print(buf);
     hcf();
 }

@@ -5,7 +5,7 @@
 ARCH := x86_64
 
 # Default user QEMU flags. These are appended to the QEMU command calls.
-QEMUFLAGS := -m 2G -monitor stdio
+QEMUFLAGS := -m 2G -monitor stdio -enable-kvm -cpu host
 
 override IMAGE_NAME := tung-tung-larp-os-$(ARCH)
 

@@ -42,7 +42,7 @@ ifeq ($(TOOLCHAIN),llvm)
 endif
 
 # User controllable C flags.
-CFLAGS := -g -O2 -pipe
+CFLAGS := -g -O2 -pipe 
 
 # User controllable C preprocessor flags. We set none by default.
 CPPFLAGS :=
@@ -77,7 +77,10 @@ override CFLAGS += \
     -fno-lto \
     -fno-PIC \
     -ffunction-sections \
-    -fdata-sections
+    -fdata-sections \
+    -Wno-error=implicit-function-declaration
+#Added this ^^ because as of gcc 14 implicit declarations are now errors and thus wont compile, This is because I use cachy,btw, Which is arch based,btw, Rolling release,btw
+#Implicit declarations are still being caught by the linker not finding the functions and this is just to shut gcc up about memset or other similar functions
 
 # Internal C preprocessor flags that should not be changed by the user.
 override CPPFLAGS := \
