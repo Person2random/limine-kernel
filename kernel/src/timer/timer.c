@@ -7,8 +7,6 @@
 void sleep(uint64_t ms) {
   uint64_t time_in_ticks = ms * (tsc_get_freq() / 1000);
   uint64_t deadline = time_in_ticks + rdtsc();
-
-  while (rdtsc() < deadline) {
-    __asm__ volatile("pause");
-  }
+  unmask_timer(deadline);
+  __asm__ volatile("hlt");
 }

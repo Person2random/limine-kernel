@@ -13,8 +13,8 @@
 
 
 void lapic_timer_init();
-void deactivate_timer();
-void activate_timer();
+void mask_timer();
+void unmask_timer(uint64_t deadline);
 ;
 ;
 ;

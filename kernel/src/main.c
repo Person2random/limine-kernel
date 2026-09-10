@@ -76,9 +76,11 @@ void kmain(void) {
     valloc_init();
     print("Valloc init");
     lapic_init();
+    lapic_timer_init();
     print("Lapic init");
     init_tsc();
     print("TSC timer init");
+    __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
     sleep(5000);
     print("Done");
     hcf();
