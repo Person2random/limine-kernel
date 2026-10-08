@@ -15,7 +15,7 @@
 void lapic_timer_init();
 void mask_timer();
 void unmask_timer(uint64_t deadline);
-;
+void set_lapic_timer_vector(uint8_t vector);
 ;
 ;
 ;

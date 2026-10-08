@@ -17,11 +17,11 @@ struct interrupt_frame {
     uint64_t rip;
     uint64_t cs;
     uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
 };
 
-//Kosom this handler its unused now
-void lapic_timer_handler(void){
-  debug_print("Tick"); //Dont actually keep this
+void lapic_timer_handler(void) {
   lapic_eoi();
 }
 

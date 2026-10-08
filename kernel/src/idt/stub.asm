@@ -49,10 +49,43 @@ isr_common_stub:
     push r15
 
 
-    ; Pass pointer to stack frame as first argument (System V ABI)
+    ; Build a normalized 22-qword frame in separate stack storage:
+    ; 15 GPRs, vector, error, RIP, CS, RFLAGS, RSP, SS.
+    ; The source frame starts immediately after the saved GPRs. Copy its
+    ; first 20 qwords (GPRs through RFLAGS), then fill the final two fields.
+    sub rsp, 176
     mov rdi, rsp
+    lea rsi, [rsp + 176]
+    mov rcx, 20
+    cld
+    rep movsq
+
+    ; The copied CS is at byte offset 144. On an outer-privilege interrupt
+    ; the hardware's old RSP/SS follow RFLAGS in the source frame.
+    test qword [rsp + 144], 3
+    jz .same_privilege
+    mov rax, [rsp + 160 + 176]
+    mov [rsp + 160], rax
+    mov rax, [rsp + 168 + 176]
+    mov [rsp + 168], rax
+    jmp .frame_ready
+.same_privilege:
+    mov qword [rsp + 160], 0
+    mov qword [rsp + 168], 0
+.frame_ready:
+    ; Keep the normalized-frame base in a callee-saved register, then align
+    ; the temporary call stack as required by the System V ABI. The interrupted
+    ; value of RBX is already saved in the original register frame.
+    mov rbx, rsp
+    mov rdi, rbx
+    and rsp, -16
 
     call interrupt_handler
+
+    ; Discard normalized copy; the original saved-register and CPU frames are
+    ; still intact below it.
+    mov rsp, rbx
+    add rsp, 176
 
 
     ; Restore registers
@@ -73,11 +106,9 @@ isr_common_stub:
     pop rax
 
 
-    ; Remove:
-    ; exception number
-    ; error code
-    add rsp, 16
-
+    ; Discard vector and error code, then let iretq consume the original CPU
+    ; frame (three words for same privilege, five after a privilege change).
+    add rsp, 16              ; discard vector and error code
     iretq
 
 
@@ -125,14 +156,15 @@ isr_err_stub 30
 
 isr_no_err_stub 31
 irq_stub 32
-
+irq_stub 33
 
 ; Table of addresses for IDT setup
 
 isr_stub_table:
 
 %assign i 0
-%rep 33
+%rep 34
     dq isr_stub_%+i
 %assign i i+1
 %endrep
+

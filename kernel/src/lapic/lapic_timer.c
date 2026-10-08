@@ -13,6 +13,13 @@ void lapic_timer_init(){
   lapic_write(LAPIC_LVT_TIMER, timer_config); //Write configuration
 }
 
+void set_lapic_timer_vector(uint8_t vector){
+  uint32_t timer_config = lapic_read(LAPIC_LVT_TIMER);
+  timer_config = (timer_config & ~0xFF) | vector;
+  lapic_write(LAPIC_LVT_TIMER, timer_config);
+}
+
+
 void mask_timer(){
   uint32_t org = lapic_read(LAPIC_LVT_TIMER);
   
