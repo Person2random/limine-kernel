@@ -17,6 +17,7 @@
 #include "./cpu/cpuid.h"
 #include "./devices/tsc/tsc.h"
 #include "./timer/timer.h"
+#include "./cpu/context/context.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -27,6 +28,9 @@
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 // Halt and catch fire function.
+
+
+#define STACK_SIZE 4096
 static void hcf(void) {
     for (;;) {
 #if defined (__x86_64__)
@@ -81,7 +85,38 @@ void kmain(void) {
     init_tsc();
     print("TSC timer init");
     __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
-    sleep(5000);
+    sleep(50);
     print("Done");
+    print("About to switch context");
+    uint8_t test_stack[STACK_SIZE] __attribute__((aligned(16)));
+
+    struct thread_context test_context = {
+        .r15 = 0,
+        .r14 = 0,
+        .r13 = 0,
+        .r12 = 0,
+        .r11 = 0,
+        .r10 = 0,
+        .r9 = 0,
+        .r8 = 0,
+
+        .rbp = 0,
+        .rdi = 0,
+        .rsi = 0,
+        .rdx = 0,
+        .rcx = 0,
+        .rbx = 0,
+        .rax = 0,
+
+        .rip = (uint64_t)test_thread,
+        .cs = 0x08,
+        .rflags = 0x202,
+        .rsp = (uint64_t)(test_stack + STACK_SIZE-8),
+        .ss = 0x10};
+    char buf[32];
+    int_to_base_string(test_context.rsp, buf, 16);
+    print(buf);
+    context_switch(&test_context, 0);
+    
     hcf();
 }

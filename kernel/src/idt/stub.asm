@@ -5,7 +5,7 @@ global isr_stub_table
 extern interrupt_handler
 
 
-; Exceptions WITHOUT CPU error code
+; exceptions without cpu error code
 %macro isr_no_err_stub 1
 isr_stub_%+%1:
     push qword 0        ; fake error code
@@ -14,7 +14,7 @@ isr_stub_%+%1:
 %endmacro
 
 
-; Exceptions WITH CPU error code
+; exceptions with cpu error code
 %macro isr_err_stub 1
 isr_stub_%+%1:
     push qword %1       ; exception number
@@ -31,7 +31,7 @@ isr_stub_%+%1:
 
 isr_common_stub:
 
-    ; Save registers
+    ; save registers
     push rax
     push rbx
     push rcx
@@ -49,10 +49,10 @@ isr_common_stub:
     push r15
 
 
-    ; Build a normalized 22-qword frame in separate stack storage:
-    ; 15 GPRs, vector, error, RIP, CS, RFLAGS, RSP, SS.
-    ; The source frame starts immediately after the saved GPRs. Copy its
-    ; first 20 qwords (GPRs through RFLAGS), then fill the final two fields.
+    ; build a normalized 22-qword frame in separate stack storage:
+    ; 15 gprs, vector, error, rip, cs, rflags, rsp, ss.
+    ; the source frame starts immediately after the saved gprs. copy its
+    ; first 20 qwords (gprs through rflags), then fill the final two fields.
     sub rsp, 176
     mov rdi, rsp
     lea rsi, [rsp + 176]
@@ -60,8 +60,8 @@ isr_common_stub:
     cld
     rep movsq
 
-    ; The copied CS is at byte offset 144. On an outer-privilege interrupt
-    ; the hardware's old RSP/SS follow RFLAGS in the source frame.
+    ; the copied cs is at byte offset 144. on an outer-privilege interrupt
+    ; the hardware's old rsp/ss follow rflags in the source frame.
     test qword [rsp + 144], 3
     jz .same_privilege
     mov rax, [rsp + 160 + 176]
@@ -73,22 +73,22 @@ isr_common_stub:
     mov qword [rsp + 160], 0
     mov qword [rsp + 168], 0
 .frame_ready:
-    ; Keep the normalized-frame base in a callee-saved register, then align
-    ; the temporary call stack as required by the System V ABI. The interrupted
-    ; value of RBX is already saved in the original register frame.
+    ; keep the normalized-frame base in a callee-saved register, then align
+    ; the temporary call stack as required by the system v abi. the interrupted
+    ; value of rbx is already saved in the original register frame.
     mov rbx, rsp
     mov rdi, rbx
     and rsp, -16
 
     call interrupt_handler
 
-    ; Discard normalized copy; the original saved-register and CPU frames are
+    ; discard normalized copy; the original saved-register and cpu frames are
     ; still intact below it.
     mov rsp, rbx
     add rsp, 176
 
 
-    ; Restore registers
+    ; restore registers
     pop r15
     pop r14
     pop r13
@@ -106,14 +106,14 @@ isr_common_stub:
     pop rax
 
 
-    ; Discard vector and error code, then let iretq consume the original CPU
+    ; discard vector and error code, then let iretq consume the original cpu
     ; frame (three words for same privilege, five after a privilege change).
     add rsp, 16              ; discard vector and error code
     iretq
 
 
 
-; CPU Exceptions 0-31
+; cpu exceptions 0-31
 
 isr_no_err_stub 0
 isr_no_err_stub 1
@@ -142,7 +142,7 @@ isr_err_stub 17
 isr_no_err_stub 18
 isr_no_err_stub 19
 isr_no_err_stub 20
-isr_no_err_stub 21
+isr_err_stub 21
 isr_no_err_stub 22
 isr_no_err_stub 23
 isr_no_err_stub 24
@@ -150,7 +150,7 @@ isr_no_err_stub 25
 isr_no_err_stub 26
 isr_no_err_stub 27
 isr_no_err_stub 28
-isr_no_err_stub 29
+isr_err_stub 29
 
 isr_err_stub 30
 
@@ -158,7 +158,7 @@ isr_no_err_stub 31
 irq_stub 32
 irq_stub 33
 
-; Table of addresses for IDT setup
+; table of addresses for idt setup
 
 isr_stub_table:
 
