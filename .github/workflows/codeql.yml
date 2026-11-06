@@ -31,8 +31,8 @@ jobs:
     # 1. Satisfy the Makefile guard by fetching your project dependencies first
     - name: Fetch Kernel Dependencies
       run: |
-        chmod +x ./get-deps
-        ./get-deps
+        chmod +x ./kernel/get-deps
+        ./kernel/get-deps
 
     # 2. Initialize CodeQL in dynamic tracking mode
     - name: Initialize CodeQL
