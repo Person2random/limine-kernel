@@ -54,6 +54,25 @@ jobs:
         category: "/language:c-cpp"
 
 
+      # ... previous initialization steps ...
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: c-cpp
+        build-mode: manual
+
+    # Your exact build block shown in the logs
+    - name: Build Kernel and Bootloader
+      run: |
+        make clean
+        # The runner will pull down your limine target and compile freestanding modules
+        make ARCH=x86_64 all
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:c-cpp"
+
 
 
 #Thank you, gemini, for writing this 
