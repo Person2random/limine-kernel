@@ -1,7 +1,7 @@
 #include "./context.h"
 #include "../../terminal/terminal.h"
 void test_thread(void){
-  print("Ready to mog all other kernel threads, threadgamy");
+  print("Ready to mog all other kernel threads, threadgamy\n");
   for (;;) {
   }
 }

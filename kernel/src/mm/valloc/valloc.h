@@ -9,10 +9,16 @@ typedef struct valloc_range{
   uint64_t length;
   bool free;  
   struct valloc_range* next;
+
+
+  struct page_descriptor* owner;
+  uint16_t index;
 } valloc_range;
 
 typedef struct page_descriptor {
-  uint16_t used; //A bit large but who cares? 16 * 128 = 2048 bits lost
+  uint16_t used;
+  uint64_t hhbitmap;
+  uint64_t lhbitmap;
   uint64_t page_pointer; //Page pointer
 } page_descriptor;
 #define RANGES_PER_PAGE (4096 / sizeof(struct valloc_range))

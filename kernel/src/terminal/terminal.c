@@ -99,12 +99,10 @@ void print(char c[]){
    c++;
    
   }
-  cursor_y++;
-  cursor_x = 0;
 }
 
 void debug_print(char c[]) {
-  if(debug_mode) print(c);
+  if(debug_mode) terminal_write(c);
 }
 
 void debug_terminal_write(char c[]){

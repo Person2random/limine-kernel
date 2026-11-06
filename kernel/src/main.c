@@ -70,24 +70,24 @@ void kmain(void) {
 */
     graphics_init();
     terminal_init(true);
-    print("Welcome to tung tung larp OS");
-    print("Initilazing GDT...");
+    print("Welcome to tung tung larp OS\n");
+    print("Initilazing GDT...\n");
     init_gdt();
-    print("Initializng IDT...");
+    print("Initializng IDT...\n");
     idt_init();
     init_pmm();
-    print("PMM init");
+    print("PMM init\n");
     valloc_init();
-    print("Valloc init");
+    print("Valloc init\n");
     lapic_init();
     lapic_timer_init();
-    print("Lapic init");
+    print("Lapic init\n");
     init_tsc();
-    print("TSC timer init");
+    print("TSC timer init\n");
     __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
     sleep(50);
-    print("Done");
-    print("About to switch context");
+    print("Done\n");
+    print("About to switch context\n");
     uint8_t test_stack[STACK_SIZE] __attribute__((aligned(16)));
 
     struct thread_context test_context = {
@@ -116,6 +116,7 @@ void kmain(void) {
     char buf[32];
     int_to_base_string(test_context.rsp, buf, 16);
     print(buf);
+    print("\n");
     context_switch(&test_context, 0);
     
     hcf();
