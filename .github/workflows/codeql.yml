@@ -26,7 +26,7 @@ jobs:
     - name: Install System Build Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential xorisso nasm bison flex
+        sudo apt-get install -y build-essential xorriso nasm bison flex
 
     # 1. Satisfy the Makefile guard by fetching your project dependencies first
     - name: Fetch Kernel Dependencies
