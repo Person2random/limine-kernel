@@ -1,0 +1,59 @@
+name: "CodeQL Kernel Analysis"
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  schedule:
+    - cron: '30 5 * * 1' # Runs every Monday at 5:30 UTC
+
+jobs:
+  analyze:
+    name: Analyze Kernel Code
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive # Ensures any submodules (like limine-protocol if applicable) pull down
+
+    - name: Install System Build Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential nasm bison flex
+
+    # 1. Satisfy the Makefile guard by fetching your project dependencies first
+    - name: Fetch Kernel Dependencies
+      run: |
+        chmod +x ./get-deps
+        ./get-deps
+
+    # 2. Initialize CodeQL in dynamic tracking mode
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: c-cpp
+        build-mode: manual # 👈 Forces CodeQL to dynamically monitor your compiler
+
+    # 3. Execute GNU Make to build the kernel target
+    - name: Build Kernel via GNU Make
+      run: |
+        make clean
+        make ARCH=x86_64 all
+
+    # 4. Analyze the database intercepted from your build
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:c-cpp"
+
+
+
+
+#Thank you, gemini, for writing this 
