@@ -40,7 +40,7 @@ jobs:
       with:
         languages: c-cpp
         build-mode: manual # 👈 Forces CodeQL to dynamically monitor your compiler
-
+        queries: security-extended, security-and-quality 
     # 3. Execute GNU Make to build the kernel target
     - name: Build Kernel via GNU Make
       run: |
