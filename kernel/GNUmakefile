@@ -1,8 +1,8 @@
+
 # Nuke built-in rules.
 .SUFFIXES:
 
 # This is the name that our final executable will have.
-# Change as needed.
 override OUTPUT := kernel
 
 # Target architecture to build for. Default to x86_64.
@@ -35,6 +35,9 @@ endif
 # User controllable linker command.
 LD := $(TOOLCHAIN_PREFIX)ld
 
+# User controllable Rust compiler.
+RUSTC := rustc
+
 # Defaults overrides for variables if using "llvm" as toolchain.
 ifeq ($(TOOLCHAIN),llvm)
     CC := clang
@@ -42,17 +45,43 @@ ifeq ($(TOOLCHAIN),llvm)
 endif
 
 # User controllable C flags.
-CFLAGS := -g -O2 -pipe 
+CFLAGS := -g -O2 -pipe
 
-# User controllable C preprocessor flags. We set none by default.
+# User controllable C preprocessor flags.
 CPPFLAGS :=
+
+# User controllable Rust flags.
+RUSTFLAGS :=
+
+# Rust edition.
+RUST_EDITION := 2021
+
+# Rust target. Override this if using a custom target.
+ifeq ($(ARCH),x86_64)
+    RUST_TARGET := x86_64-unknown-none
+endif
+ifeq ($(ARCH),aarch64)
+    RUST_TARGET := aarch64-unknown-none
+endif
+ifeq ($(ARCH),riscv64)
+    RUST_TARGET := riscv64gc-unknown-none-elf
+endif
+ifeq ($(ARCH),loongarch64)
+    RUST_TARGET := loongarch64-unknown-none
+endif
+
+# Rust crate root.
+RUST_CRATE_ROOT := src/rust/lib.rs
+
+# Additional Rust libraries to link.
+RUST_LIBS :=
 
 ifeq ($(ARCH),x86_64)
     # User controllable nasm flags.
     NASMFLAGS := -g
 endif
 
-# User controllable linker flags. We set none by default.
+# User controllable linker flags.
 LDFLAGS :=
 
 # Ensure the dependencies have been obtained.
@@ -79,8 +108,6 @@ override CFLAGS += \
     -ffunction-sections \
     -fdata-sections \
     -Wno-error=implicit-function-declaration
-#Added this ^^ because as of gcc 14 implicit declarations are now errors and thus wont compile, This is because I use cachy,btw, Which is arch based,btw, Rolling release,btw
-#Implicit declarations are still being caught by the linker not finding the functions and this is just to shut gcc up about memset or other similar functions
 
 # Internal C preprocessor flags that should not be changed by the user.
 override CPPFLAGS := \
@@ -92,7 +119,7 @@ override CPPFLAGS := \
     -MP
 
 ifeq ($(ARCH),x86_64)
-    # Internal nasm flags that should not be changed by the user.
+    # Internal nasm flags.
     override NASMFLAGS := \
         $(patsubst -g,-g -F dwarf,$(NASMFLAGS)) \
         -Wall
@@ -104,6 +131,7 @@ ifeq ($(ARCH),x86_64)
         override CC += \
             -target x86_64-unknown-none-elf
     endif
+
     override CFLAGS += \
         -m64 \
         -march=x86-64 \
@@ -114,47 +142,58 @@ ifeq ($(ARCH),x86_64)
         -mno-sse2 \
         -mno-red-zone \
         -mcmodel=kernel
+
     override LDFLAGS += \
         -m elf_x86_64
+
     override NASMFLAGS := \
         -f elf64 \
         $(NASMFLAGS)
 endif
+
 ifeq ($(ARCH),aarch64)
     ifeq ($(CC_IS_CLANG),1)
         override CC += \
             -target aarch64-unknown-none-elf
     endif
+
     override CFLAGS += \
         -mcpu=generic \
         -march=armv8-a+nofp+nosimd \
         -mgeneral-regs-only
+
     override LDFLAGS += \
         -m aarch64elf
 endif
+
 ifeq ($(ARCH),riscv64)
     ifeq ($(CC_IS_CLANG),1)
         override CC += \
             -target riscv64-unknown-none-elf
     endif
+
     override CFLAGS += \
         -march=rv64imac_zicsr_zifencei \
         -mabi=lp64 \
         -mno-relax
+
     override LDFLAGS += \
         -m elf64lriscv \
         --no-relax
 endif
+
 ifeq ($(ARCH),loongarch64)
     ifeq ($(CC_IS_CLANG),1)
         override CC += \
             -target loongarch64-unknown-none-elf
     endif
+
     override CFLAGS += \
         -march=loongarch64 \
         -mabi=lp64s \
         -mfpu=none \
         -msimd=none
+
     override LDFLAGS += \
         -m elf64loongarch
 endif
@@ -167,23 +206,46 @@ override LDFLAGS += \
     --gc-sections \
     -T linker-scripts/$(ARCH).lds
 
-# Use "find" to glob all *.c, *.S, and *.asm files in the tree
-# (except the src/arch/* directories, as those are gonna be added
-# in the next step).
-override SRCFILES := $(shell find -L src cc-runtime/src -type f -not -path 'src/arch/*' 2>/dev/null | LC_ALL=C sort)
+# Find all source files.
+override SRCFILES := $(shell find -L src cc-runtime/src -type f \
+    -not -path 'src/arch/*' 2>/dev/null | LC_ALL=C sort)
+
 # Add architecture specific files, if they exist.
-override SRCFILES += $(shell find -L src/arch/$(ARCH) -type f 2>/dev/null | LC_ALL=C sort)
-# Obtain the object and header dependencies file names.
+override SRCFILES += $(shell find -L src/arch/$(ARCH) -type f \
+    2>/dev/null | LC_ALL=C sort)
+
+# Obtain source file lists.
 override CFILES := $(filter %.c,$(SRCFILES))
 override ASFILES := $(filter %.S,$(SRCFILES))
+
 ifeq ($(ARCH),x86_64)
-override NASMFILES := $(filter %.asm,$(SRCFILES))
+    override NASMFILES := $(filter %.asm,$(SRCFILES))
 endif
-override OBJ := $(addprefix obj-$(ARCH)/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o))
+
+# Obtain object file names.
+override OBJ := \
+    $(addprefix obj-$(ARCH)/,$(CFILES:.c=.c.o)) \
+    $(addprefix obj-$(ARCH)/,$(ASFILES:.S=.S.o))
+
 ifeq ($(ARCH),x86_64)
-override OBJ += $(addprefix obj-$(ARCH)/,$(NASMFILES:.asm=.asm.o))
+    override OBJ += \
+        $(addprefix obj-$(ARCH)/,$(NASMFILES:.asm=.asm.o))
 endif
-override HEADER_DEPS := $(addprefix obj-$(ARCH)/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
+
+# Find Rust source files.
+override RUST_SOURCES := $(shell find -L src/rust -type f -name '*.rs' \
+    2>/dev/null | LC_ALL=C sort)
+
+# Rust static library.
+override RUST_LIB :=
+ifneq ($(wildcard $(RUST_CRATE_ROOT)),)
+    override RUST_LIB := obj-$(ARCH)/librustkernel.a
+endif
+
+# Obtain C and assembly dependency file names.
+override HEADER_DEPS := \
+    $(addprefix obj-$(ARCH)/,$(CFILES:.c=.c.d)) \
+    $(addprefix obj-$(ARCH)/,$(ASFILES:.S=.S.d))
 
 # Default target. This must come first, before header dependencies.
 .PHONY: all
@@ -193,9 +255,9 @@ all: bin-$(ARCH)/$(OUTPUT)
 -include $(HEADER_DEPS)
 
 # Link rules for the final executable.
-bin-$(ARCH)/$(OUTPUT): GNUmakefile linker-scripts/$(ARCH).lds $(OBJ)
+bin-$(ARCH)/$(OUTPUT): GNUmakefile linker-scripts/$(ARCH).lds $(OBJ) $(RUST_LIB) $(RUST_LIBS)
 	mkdir -p "$(dir $@)"
-	$(LD) $(LDFLAGS) $(OBJ) -o $@
+	$(LD) $(LDFLAGS) $(OBJ) $(RUST_LIB) $(RUST_LIBS) -o $@
 
 # Compilation rules for *.c files.
 obj-$(ARCH)/%.c.o: %.c GNUmakefile
@@ -206,6 +268,21 @@ obj-$(ARCH)/%.c.o: %.c GNUmakefile
 obj-$(ARCH)/%.S.o: %.S GNUmakefile
 	mkdir -p "$(dir $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+# Compile the entire Rust crate into a static library.
+obj-$(ARCH)/librustkernel.a: $(RUST_CRATE_ROOT) $(RUST_SOURCES) GNUmakefile
+	mkdir -p "$(dir $@)"
+	$(RUSTC) \
+	    --edition=$(RUST_EDITION) \
+	    --target=$(RUST_TARGET) \
+	    --crate-type=staticlib \
+	    -C panic=abort \
+	    -C opt-level=2 \
+	    -C debuginfo=2 \
+	    -C relocation-model=static \
+	    $(RUSTFLAGS) \
+	    $(RUST_CRATE_ROOT) \
+	    -o $@
 
 ifeq ($(ARCH),x86_64)
 # Compilation rules for *.asm (nasm) files.
@@ -234,4 +311,4 @@ install: all
 .PHONY: uninstall
 uninstall:
 	rm -f "$(DESTDIR)$(PREFIX)/share/$(OUTPUT)/$(OUTPUT)-$(ARCH)"
-	-rmdir "$(DESTDIR)$(PREFIX)/share/$(OUTPUT)"
+

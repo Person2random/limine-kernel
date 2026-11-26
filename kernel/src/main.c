@@ -43,6 +43,8 @@ static void hcf(void) {
     }
 }
 
+
+extern uint64_t rust_test(void);
 // The following will be our kernel's entry point.
 // If renaming kmain() to something else, make sure to change the
 // linker script accordingly.
@@ -86,38 +88,14 @@ void kmain(void) {
     print("TSC timer init\n");
     __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
     sleep(50);
-    print("Done\n");
-    print("About to switch context\n");
-    uint8_t test_stack[STACK_SIZE] __attribute__((aligned(16)));
-
-    struct thread_context test_context = {
-        .r15 = 0,
-        .r14 = 0,
-        .r13 = 0,
-        .r12 = 0,
-        .r11 = 0,
-        .r10 = 0,
-        .r9 = 0,
-        .r8 = 0,
-
-        .rbp = 0,
-        .rdi = 0,
-        .rsi = 0,
-        .rdx = 0,
-        .rcx = 0,
-        .rbx = 0,
-        .rax = 0,
-
-        .rip = (uint64_t)test_thread,
-        .cs = 0x08,
-        .rflags = 0x202,
-        .rsp = (uint64_t)(test_stack + STACK_SIZE-8),
-        .ss = 0x10};
+    
+    uint64_t test = rust_test();
     char buf[32];
-    int_to_base_string(test_context.rsp, buf, 16);
+    int_to_base_string(test,buf,16);
     print(buf);
     print("\n");
-    context_switch(&test_context, 0);
+
+    print("Done\n");
     
     hcf();
 }
