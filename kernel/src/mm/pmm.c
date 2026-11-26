@@ -4,6 +4,7 @@
 #include "../terminal/terminal.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "../sys/panic.h"
 extern uint8_t _kernel_size[];
 uint8_t* bitmap;
 uint64_t bitmap_size;
@@ -70,8 +71,7 @@ void init_pmm(void) {
   }
 
   if(bitmap == NULL){
-    debug_print("Problem occured while init pmm");
-    __asm__ volatile("sti;hlt"); //In place of a panic function, Replace later
+  	kernel_panic("Apparently your memory is SO destroyed you dont have enough space for a bitmap",0x1);
   }
   memset((void*)bitmap, 0xFF, bitmap_size); //set to bitmap_size instead of 1024^2
   for(uint64_t i = 0; i < entry_count; i++){

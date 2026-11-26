@@ -61,6 +61,17 @@ void put_char(uint32_t x, uint32_t y, char c ,uint32_t fg, uint32_t bg){
     
   
 }
+uint32_t get_cursor_x(void){
+	return cursor_x;
+}
+uint32_t get_cursor_y(void){
+	return cursor_y;
+}
+
+void set_cursor(uint32_t x, uint32_t y){
+	cursor_x = x;
+	cursor_y = y;
+}
 
 void write_char(char c) {
   if (c == '\n') {

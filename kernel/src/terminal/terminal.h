@@ -12,4 +12,14 @@ void debug_terminal_write(char c[]);
 void set_bg(uint32_t bg);
 void set_fg(uint32_t fg);
 extern bool debug_mode;
+uint32_t get_cursor_x(void);
+uint32_t get_cursor_y(void);
+void set_cursor(uint32_t x, uint32_t y); 
+extern uint32_t max_x;
+extern uint32_t max_y;
+;
+;
+;
+;
+;
 #endif
