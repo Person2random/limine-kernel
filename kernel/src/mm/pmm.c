@@ -10,6 +10,7 @@ uint8_t* bitmap;
 uint64_t bitmap_size;
 uint64_t KbasePhys;
 uint64_t KbaseVirt;
+static uint64_t usable_memory_bytes;
 void pmm_mark(uint64_t frame, bool used){
   if(used) bitmap[frame/8] |= (1 << (frame % 8 ));
   else bitmap[frame/8] &= ~(1 << (frame % 8));
@@ -39,16 +40,25 @@ uint64_t pmm_get_max_addr_phys(){
   return highest_address;
 }
 
+uint64_t pmm_get_usable_memory_bytes(void) {
+  return usable_memory_bytes;
+}
+
 void init_pmm(void) {
   KbasePhys = executable_address_request.response->physical_base;
   KbaseVirt =  executable_address_request.response->virtual_base;
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t entry_count = memmap_request.response->entry_count;
   uint64_t highest_address = 0;
+  usable_memory_bytes = 0;
   struct limine_memmap_entry **entries = memmap_request.response ->entries;
   for(uint64_t i = 0; i < entry_count;i++){
     struct limine_memmap_entry *entry = entries[i];
     if(entry->type != LIMINE_MEMMAP_USABLE) continue;
+    if (UINT64_MAX - usable_memory_bytes < entry->length)
+      usable_memory_bytes = UINT64_MAX;
+    else
+      usable_memory_bytes += entry->length;
     uint64_t high_address = entry->base + entry->length;
     if (high_address > highest_address)
       highest_address = high_address;

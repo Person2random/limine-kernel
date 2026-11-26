@@ -40,6 +40,10 @@ void idt_init(void){
     idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
     vectors[vector] = true;
   }
+  idt_set_descriptor(34, isr_stub_table[34], 0x8E);
+  vectors[34] = true;
+  idt_set_descriptor(65, isr_stub_table[65], 0x8E);
+  vectors[65] = true;
   __asm__ volatile ("lidt %0": : "m"((idt_pointer)));
  // __asm__ volatile ("sti");
  // Dont place this until you have hardware interrupts

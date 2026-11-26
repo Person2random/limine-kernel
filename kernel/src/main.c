@@ -18,6 +18,8 @@
 #include "./devices/tsc/tsc.h"
 #include "./timer/timer.h"
 #include "./cpu/context/context.h"
+#include "./keyboard/keyboard.h"
+#include "./shell/shell.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -86,8 +88,12 @@ void kmain(void) {
     print("Lapic init\n");
     init_tsc();
     print("TSC timer init\n");
+    if (!ps2_keyboard_init()) {
+        print("PS/2 keyboard initialization failed\n");
+        hcf();
+    }
+    print("PS/2 keyboard IRQ ready\n");
     __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
-    sleep(50);
     
     uint64_t test = rust_test();
     char buf[32];
@@ -96,6 +102,6 @@ void kmain(void) {
     print("\n");
 
     print("Done\n");
-    
+    shell_run();
     hcf();
 }

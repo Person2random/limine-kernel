@@ -6,6 +6,8 @@
 #define LAPIC_TPR             0x080
 #define LAPIC_EOI             0x0B0
 #define LAPIC_SVR             0x0F0
+#define LAPIC_LVT_LINT0       0x350
+#define LAPIC_SPURIOUS_VECTOR 34
 
 #define LAPIC_LVT_TIMER       0x320
 #define LAPIC_INITIAL_COUNT   0x380

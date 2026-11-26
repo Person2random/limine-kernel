@@ -157,14 +157,18 @@ isr_err_stub 30
 isr_no_err_stub 31
 irq_stub 32
 irq_stub 33
+%assign i 34
+%rep 32
+irq_stub i
+%assign i i+1
+%endrep
 
 ; table of addresses for idt setup
 
 isr_stub_table:
 
 %assign i 0
-%rep 34
+%rep 66
     dq isr_stub_%+i
 %assign i i+1
 %endrep
-

@@ -5,6 +5,7 @@
 #include "../lapic/lapic_timer.h"
 #include "../timer/timer.h"
 #include <stdint.h>
+extern void ps2_keyboard_irq(void);
 struct interrupt_frame {
     uint64_t r15, r14, r13, r12;
     uint64_t r11, r10, r9, r8;
@@ -79,6 +80,10 @@ void interrupt_handler(struct interrupt_frame* frame){
   switch (frame->exception) {
     case 32:
       lapic_timer_handler();
+      break;
+    case 65:
+      ps2_keyboard_irq();
+      lapic_eoi();
       break;
   }
   return;
