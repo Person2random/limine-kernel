@@ -9,6 +9,7 @@ static bool right_control_down;
 static bool app_exit_requested;
 
 static char translate_scancode(uint8_t scancode, bool shifted) {
+    // Set-1 scan codes are a keyboard layout written by someone who hated maps.
     static const char plain[] =
         "\0\0331234567890-=\b\t"
         "qwertyuiop[]\n\0"
@@ -62,6 +63,7 @@ bool keyboard_read_event(struct keyboard_event *event) {
     if (event->pressed && event->extended == false &&
         event->scancode == 0x2E &&
         (left_control_down || right_control_down)) {
+        // Every app gets Ctrl+C, including the ones that think they are special.
         app_exit_requested = true;
     }
 

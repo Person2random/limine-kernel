@@ -93,6 +93,7 @@ static void draw_game_over(void) {
 }
 
 static uint32_t random_cell(struct game *game, uint32_t limit) {
+    // Xorshift is not cryptographic, but the snake has not asked for secrets.
     uint64_t value = game->random_state;
     value ^= value << 13;
     value ^= value >> 7;
@@ -250,6 +251,7 @@ void snake_run(void) {
     if (!wait_for_start()) {
         return;
     }
+    // Discard the impatient key presses from the instructions screen.
     struct keyboard_event pending_event;
     while (keyboard_read_event(&pending_event)) {
     }

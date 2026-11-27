@@ -2,6 +2,10 @@
 #include "../graphics/graphics.h"
 #include "../keyboard/keyboard.h"
 #include "../snake/snake.h"
+#include "../pong/pong.h"
+#include "../tetris/tetris.h"
+#include "../demo3d/demo3d.h"
+#include "../usermode/usermode.h"
 #include "../cpu/cpuid.h"
 #include "../mm/pmm.h"
 #include "../terminal/font.h"
@@ -189,6 +193,7 @@ static void editor_run(void) {
     }
     uint32_t x = 0;
     uint32_t y = 0;
+    // A scratchpad in RAM: the disk driver is welcome to enjoy its day off.
     static char editor_buffer[MAX_ROWS][MAX_COLUMNS];
     for (uint32_t row = 0; row < MAX_ROWS; row++) {
         for (uint32_t column = 0; column < MAX_COLUMNS; column++) {
@@ -517,13 +522,25 @@ static void execute_command(void) {
     write_output(input);
     write_output("\n");
 
-    if (string_equals(input, "cmds")) {
+    if (string_equals(input, "help")) {
+        write_output("Commands: help, cmds, apps, run <app>, clear\n");
+        write_output("Apps: snake, pong, tetris, 3d, keyboard, editor,\n");
+        write_output("      fastfetch, userspace\n");
+        write_output("Pong: W/S and arrow keys. P or click Pause/Resume.\n");
+        write_output("Tetris: arrows, Z/X rotate, Space drops, R restarts.\n");
+        write_output("       P or click Pause/Resume. Ctrl+C exits any app.\n");
+    } else if (string_equals(input, "cmds")) {
         write_output("cmds - list commands\n");
+        write_output("help - commands, apps, and controls\n");
         write_output("apps - list apps\n");
         write_output("run <app> - run an app\n");
         write_output("clear - clear the terminal\n");
     } else if (string_equals(input, "apps")) {
         write_output("snake - Snake game\n");
+        write_output("pong - two-player Pong\n");
+        write_output("tetris - falling block game\n");
+        write_output("3d - rotating wireframe cube\n");
+        write_output("userspace - run a ring-3 syscall demo\n");
         write_output("keyboard - keyboard input test\n");
         write_output("editor - temporary text editor\n");
         write_output("fastfetch - show system information\n");
@@ -531,6 +548,22 @@ static void execute_command(void) {
         render_shell();
         snake_run();
         write_output("Snake closed.\n");
+    } else if (parse_run_app(input, "pong")) {
+        render_shell();
+        pong_run();
+        write_output("Pong closed.\n");
+    } else if (parse_run_app(input, "tetris")) {
+        render_shell();
+        tetris_run();
+        write_output("Tetris closed.\n");
+    } else if (parse_run_app(input, "3d")) {
+        render_shell();
+        demo3d_run();
+        write_output("3D demo closed. The cube has returned to flatland.\n");
+    } else if (parse_run_app(input, "userspace")) {
+        render_shell();
+        user_mode_run_demo();
+        write_output("Ring-3 demo returned via write and exit syscalls.\n");
     } else if (parse_run_app(input, "keyboard")) {
         render_shell();
         keyboard_test_run();

@@ -14,6 +14,24 @@ typedef struct {
 }  __attribute__((packed)) gdt_entry;
 
 typedef struct {
+  uint32_t reserved0;
+  uint64_t rsp0;
+  uint64_t rsp1;
+  uint64_t rsp2;
+  uint64_t reserved1;
+  uint64_t ist1;
+  uint64_t ist2;
+  uint64_t ist3;
+  uint64_t ist4;
+  uint64_t ist5;
+  uint64_t ist6;
+  uint64_t ist7;
+  uint64_t reserved2;
+  uint16_t reserved3;
+  uint16_t io_map_base;
+} __attribute__((packed)) tss_entry;
+
+typedef struct {
     uint16_t limit_low;
     uint16_t base_low;
     uint8_t  base_mid;
@@ -63,9 +81,27 @@ typedef struct {
   uint64_t base;
 } __attribute__((packed)) GDTR;
 
-
 gdt_table gdt;
 GDTR gdt_pointer;
+static tss_entry tss;
+
+extern void load_tss(void);
+
+void gdt_set_rsp0(uint64_t rsp0) {
+  tss.rsp0 = rsp0;
+}
+
+static void set_tss_descriptor(TSSDescriptor* descriptor, uint64_t base,
+                               uint32_t limit) {
+  descriptor->limit_low = limit & 0xFFFF;
+  descriptor->base_low = base & 0xFFFF;
+  descriptor->base_mid = (base >> 16) & 0xFF;
+  descriptor->access = 0x89;
+  descriptor->flags_limit = (limit >> 16) & 0x0F;
+  descriptor->base_high = (base >> 24) & 0xFF;
+  descriptor->base_upper = base >> 32;
+  descriptor->reserved = 0;
+}
 
 void init_gdt(void){
   set_gdt_entry(&gdt.null, 0,0,0,0);
@@ -73,8 +109,11 @@ void init_gdt(void){
   set_gdt_entry(&gdt.Kdata, 69, 420, 0x92, 0);
   set_gdt_entry(&gdt.code, 0,0,0xFA,0xA0);
   set_gdt_entry(&gdt.data, 0, 0, 0xF2, 0x00); //Tung tung larp
+  tss.io_map_base = sizeof(tss);
+  set_tss_descriptor(&gdt.tss_desc, (uint64_t)&tss, sizeof(tss) - 1);
   gdt_pointer.base = (uint64_t)&gdt;
   gdt_pointer.limit = sizeof(gdt_table) - 1;
   load_gdt(&gdt_pointer);
   reload_segments();
+  load_tss();
 }

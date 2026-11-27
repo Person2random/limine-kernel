@@ -2,10 +2,11 @@
 use core::panic::PanicInfo;
 
 mod ps2_keyboard;
+mod ps2_mouse;
 
 #[no_mangle]
 pub extern "C" fn rust_test() -> u64 {
-    panic!("im very angry and panicking");
+    0xDEADBEEF
 }
 
 extern "C" {

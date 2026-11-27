@@ -17,6 +17,7 @@ const QUEUE_MASK: usize = QUEUE_SIZE - 1;
 const CONTROLLER_TIMEOUT: usize = 100_000;
 
 static mut EVENTS: [u16; QUEUE_SIZE] = [0; QUEUE_SIZE];
+// The IRQ is the producer and the shell is the consumer; neither needs a meeting.
 static HEAD: AtomicUsize = AtomicUsize::new(0);
 static TAIL: AtomicUsize = AtomicUsize::new(0);
 static DROPPED_EVENTS: AtomicUsize = AtomicUsize::new(0);
@@ -182,6 +183,7 @@ pub extern "C" fn ps2_keyboard_irq() {
         let scancode = unsafe { inb(DATA_PORT) };
         if status & 0x20 == 0 && status & 0xC0 == 0 {
             unsafe {
+                // Pause sends a whole tiny novella; none of those bytes are key events.
                 if PAUSE_SCANCODES_REMAINING != 0 {
                     PAUSE_SCANCODES_REMAINING -= 1;
                 } else if scancode == 0xE0 {
@@ -232,8 +234,7 @@ pub extern "C" fn ps2_keyboard_read_event() -> u16 {
 }
 
 // Returns 0 if empty; otherwise bit 15 is pressed, bit 8 is E0-prefixed,
-// and bits 0-7 contain the set-1 scan code.
-// I also don't really know what this does, I stole it off of a website but it seems to work, so I guess it does what it says on the tin.
+// and bits 0-7 contain the set-1 scan code. The keyboard chose bitfields over words.
 #[no_mangle]
 pub extern "C" fn ps2_keyboard_dropped_events() -> usize {
     DROPPED_EVENTS.load(Ordering::Relaxed)

@@ -3,6 +3,9 @@ bits 64
 
 global isr_stub_table
 extern interrupt_handler
+extern user_saved_rsp
+extern user_saved_cr3
+extern user_saved_rflags
 
 
 ; exceptions without cpu error code
@@ -82,6 +85,16 @@ isr_common_stub:
 
     call interrupt_handler
 
+    cmp qword [rbx + 120], -1
+    je .user_exit
+
+    ; Copy syscall return registers back to the interrupted user context.
+    lea rsi, [rbx]
+    lea rdi, [rbx + 176]
+    mov rcx, 15
+    cld
+    rep movsq
+
     ; discard normalized copy; the original saved-register and cpu frames are
     ; still intact below it.
     mov rsp, rbx
@@ -111,6 +124,83 @@ isr_common_stub:
     add rsp, 16              ; discard vector and error code
     iretq
 
+.user_exit:
+    mov rax, [rel user_saved_cr3]
+    mov cr3, rax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov rsp, [rel user_saved_rsp]
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    pop rbp
+    push qword [rel user_saved_rflags]
+    popfq
+    ret
+
+global user_enter
+user_enter:
+    push rbp
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov [rel user_saved_rsp], rsp
+    pushfq
+    pop rax
+    mov [rel user_saved_rflags], rax
+    mov rax, cr3
+    mov [rel user_saved_cr3], rax
+    mov cr3, rdx
+
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    push qword 0x23
+    push rsi
+    pushfq
+    pop rax
+    or rax, 0x200
+    and rax, ~0x3000
+    push rax
+    push qword 0x1B
+    push rdi
+    iretq
+
+section .userdemo progbits alloc exec nowrite align=4096
+global user_demo_start
+global user_demo_end
+user_demo_start:
+    mov eax, 1
+    lea rdi, [rel user_demo_message]
+    mov esi, user_demo_message_end - user_demo_message
+    int 0x80
+    mov eax, 2
+    xor edi, edi
+    int 0x80
+.hang:
+    pause
+    jmp .hang
+user_demo_message:
+    db "Hello from ring 3! Syscalls work."
+user_demo_message_end:
+user_demo_end:
+
+section .bss
+align 8
+global user_saved_rsp
+user_saved_rsp: resq 1
+global user_saved_cr3
+user_saved_cr3: resq 1
+global user_saved_rflags
+user_saved_rflags: resq 1
+
+section .text
 
 
 ; cpu exceptions 0-31
@@ -158,17 +248,18 @@ isr_no_err_stub 31
 irq_stub 32
 irq_stub 33
 %assign i 34
-%rep 32
+%rep 94
 irq_stub i
 %assign i i+1
 %endrep
+irq_stub 128
 
 ; table of addresses for idt setup
 
 isr_stub_table:
 
 %assign i 0
-%rep 66
+%rep 129
     dq isr_stub_%+i
 %assign i i+1
 %endrep

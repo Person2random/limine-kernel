@@ -1,5 +1,6 @@
 global load_gdt
 global reload_segments
+global load_tss
 
 section .text
 
@@ -18,4 +19,9 @@ reload_segments:
     mov ds, ax
     mov es, ax
     mov ss, ax
+    ret
+
+load_tss:
+    mov ax, 0x28
+    ltr ax
     ret

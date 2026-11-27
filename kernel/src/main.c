@@ -19,6 +19,7 @@
 #include "./timer/timer.h"
 #include "./cpu/context/context.h"
 #include "./keyboard/keyboard.h"
+#include "./mouse/mouse.h"
 #include "./shell/shell.h"
 // Set the base revision to 6, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
@@ -93,6 +94,11 @@ void kmain(void) {
         hcf();
     }
     print("PS/2 keyboard IRQ ready\n");
+    if (!ps2_mouse_init()) {
+        print("PS/2 mouse unavailable; keyboard controls still work\n");
+    } else {
+        print("PS/2 mouse IRQ ready\n");
+    }
     __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
     
     uint64_t test = rust_test();

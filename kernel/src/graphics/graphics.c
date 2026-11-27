@@ -21,6 +21,12 @@ void put_pixel(uint32_t x, uint32_t y, uint32_t color){
 
  fb_address[y*pitch_stride + x] = color ;
 }
+uint32_t graphics_get_pixel(uint32_t x, uint32_t y){
+ if (x >= fb->width || y >= fb->height) return 0;
+ uint32_t* fb_address = (uint32_t *)fb->address;
+ size_t pitch_stride = fb->pitch / 4;
+ return fb_address[y*pitch_stride + x];
+}
 ///We7yat omak, never use this
 void terminal_scroll(void) {
  uint32_t* framebuffer = (uint32_t*)fb->address;

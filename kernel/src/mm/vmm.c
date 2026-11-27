@@ -46,7 +46,8 @@ uint64_t* vmm_get_pte(uint64_t virt, uint64_t* pml_p){ //Finally writing a prope
 
   return &(pt[pt_index]);
 }
-void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
+void vmm_map_flags(uint64_t virt, uint64_t physical, uint64_t* pml_p,
+                   uint64_t flags){
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;
   uint64_t pdpt_index = (virt >> 30) & 0x1FF;
@@ -61,6 +62,10 @@ void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
     pml4 = pml_p;
     pml_phys = (uint64_t)pml4 - hhdm_offset;
   }
+  uint64_t table_flags = VMM_PRESENT | VMM_WRITE;
+  if (flags & VMM_USER) {
+    table_flags |= VMM_USER;
+  }
   uint64_t pml_entry = pml4[pml4_index];
   uint64_t pdpt;
   uint64_t pdpt_phys;
@@ -68,11 +73,12 @@ void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
     pdpt_phys = pmm_alloc_page();
     pdpt = pdpt_phys + hhdm_offset;
     memset((uint64_t*)pdpt, 0, 4096);
-    pml4[pml4_index] = pml_entry |pdpt_phys| 1 | 2; //Set Present to 1 and writable to 1
+    pml4[pml4_index] = pdpt_phys | table_flags;
   }
   else{
     pdpt_phys = pml_entry & ~0xFFFULL;
     pdpt = pdpt_phys + hhdm_offset;
+    pml4[pml4_index] |= table_flags;
   }
   uint64_t* pdpt_table = (uint64_t*) (pdpt_phys + hhdm_offset);
   uint64_t pdpt_entry = pdpt_table[pdpt_index];
@@ -82,10 +88,11 @@ void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
     pd_phys = pmm_alloc_page();
     pd = pd_phys+hhdm_offset;
     memset((uint64_t*)pd, 0, 4096);
-    pdpt_table[pdpt_index] = pdpt_entry | pd_phys | 1 | 2; // Look up a few lines im not going to explain the same thing over and over
+    pdpt_table[pdpt_index] = pd_phys | table_flags;
   }else{
     pd_phys = pdpt_entry & ~0xFFFULL;
     pd = pd_phys + hhdm_offset;
+    pdpt_table[pdpt_index] |= table_flags;
   }
 
   uint64_t* pd_table = (uint64_t*)pd;
@@ -96,16 +103,21 @@ void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p){
     pt_phys = pmm_alloc_page();
     pt = pt_phys + hhdm_offset;
     memset((uint64_t*)pt, 0, 4096);
-    pd_table[pd_index] = pd_entry | pt_phys | 1 | 2;
+    pd_table[pd_index] = pt_phys | table_flags;
   }else{
     pt_phys = pd_entry & ~0xFFFULL;
     pt = pt_phys + hhdm_offset;
+    pd_table[pd_index] |= table_flags;
   }
  uint64_t* pt_table = (uint64_t*)pt;
- pt_table[pt_index] = physical | 1| 2;
+ pt_table[pt_index] = physical | flags;
  
   asm volatile("invlpg (%0)" ::"r"(virt) : "memory");
 
+}
+
+void vmm_map(uint64_t virt, uint64_t physical, uint64_t* pml_p) {
+  vmm_map_flags(virt, physical, pml_p, VMM_PRESENT | VMM_WRITE);
 }
 
 

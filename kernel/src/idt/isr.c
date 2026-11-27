@@ -4,23 +4,11 @@
 #include "../lapic/lapic.h"
 #include "../lapic/lapic_timer.h"
 #include "../timer/timer.h"
+#include "../mouse/mouse.h"
+#include "../usermode/usermode.h"
 #include <stdint.h>
 extern void ps2_keyboard_irq(void);
-struct interrupt_frame {
-    uint64_t r15, r14, r13, r12;
-    uint64_t r11, r10, r9, r8;
-    uint64_t rbp, rdi, rsi;
-    uint64_t rdx, rcx, rbx, rax;
-
-    uint64_t exception;
-    uint64_t error_code;
-
-    uint64_t rip;
-    uint64_t cs;
-    uint64_t rflags;
-    uint64_t rsp;
-    uint64_t ss;
-};
+extern void ps2_mouse_irq(void);
 
 void lapic_timer_handler(void) {
   lapic_eoi();
@@ -72,9 +60,17 @@ void pf_handler(struct interrupt_frame* frame) {
 }
 void interrupt_handler(struct interrupt_frame* frame){
   if(frame->exception == 14){
+    if (frame->cs & 3) {
+      user_mode_abort(frame);
+      return;
+    }
     pf_handler(frame);
   }
   if(frame->exception < 32){
+    if (frame->cs & 3) {
+      user_mode_abort(frame);
+      return;
+    }
     exception_handler(frame);
   }
   switch (frame->exception) {
@@ -84,6 +80,13 @@ void interrupt_handler(struct interrupt_frame* frame){
     case 65:
       ps2_keyboard_irq();
       lapic_eoi();
+      break;
+    case 76:
+      ps2_mouse_irq();
+      lapic_eoi();
+      break;
+    case 128:
+      user_mode_syscall(frame);
       break;
   }
   return;

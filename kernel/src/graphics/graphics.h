@@ -4,6 +4,7 @@
 #define GRAPHICS_H
 void graphics_init(void);
 void put_pixel(uint32_t x, uint32_t y, uint32_t color);
+uint32_t graphics_get_pixel(uint32_t x, uint32_t y);
 void terminal_scroll(void);
 extern uint64_t width;
 extern uint64_t height;
