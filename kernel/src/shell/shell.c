@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "../graphics/graphics.h"
 #include "../keyboard/keyboard.h"
+#include "../mouse/mouse.h"
 #include "../snake/snake.h"
 #include "../pong/pong.h"
 #include "../tetris/tetris.h"
@@ -602,31 +603,62 @@ void shell_run(void) {
     write_output("Type cmds for commands or apps for applications.\n");
     render_shell();
 
+    int32_t mouse_x = (int32_t)width / 2;
+    int32_t mouse_y = (int32_t)height / 2;
+    mouse_cursor_draw((uint32_t)mouse_x, (uint32_t)mouse_y);
+
     for (;;) {
-        struct keyboard_event event;
-        if (!keyboard_read_event(&event)) {
-            __asm__ volatile("pause");
-            continue;
-        }
-        keyboard_take_app_exit();
-        if (!event.pressed || event.extended) {
-            continue;
-        }
-        if (event.character == '\n') {
-            execute_command();
-            render_shell();
-        } else if (event.character == '\b') {
-            if (input_length != 0) {
-                input_length--;
-                input[input_length] = '\0';
-                render_prompt_input();
+        bool cursor_hidden = false;
+        struct mouse_event pointer_event;
+        while (mouse_read_event(&pointer_event)) {
+            if (!cursor_hidden) {
+                mouse_cursor_erase();
+                cursor_hidden = true;
             }
-        } else if (event.character >= 32 && event.character <= 126 &&
-                   input_length + 1 < MAX_INPUT &&
-                   input_length + 3 < columns) {
-            input[input_length++] = event.character;
-            input[input_length] = '\0';
-            render_prompt_input();
+            mouse_x += pointer_event.dx;
+            mouse_y -= pointer_event.dy;
+            if (mouse_x < 0) mouse_x = 0;
+            if (mouse_y < 0) mouse_y = 0;
+            if ((uint64_t)mouse_x >= width) mouse_x = (int32_t)width - 1;
+            if ((uint64_t)mouse_y >= height) mouse_y = (int32_t)height - 1;
         }
+
+        struct keyboard_event event;
+        if (keyboard_read_event(&event)) {
+            keyboard_take_app_exit();
+            if (event.pressed && !event.extended) {
+                if (event.character == '\n') {
+                    if (!cursor_hidden) {
+                        mouse_cursor_erase();
+                        cursor_hidden = true;
+                    }
+                    execute_command();
+                    render_shell();
+                } else if (event.character == '\b' && input_length != 0) {
+                    if (!cursor_hidden) {
+                        mouse_cursor_erase();
+                        cursor_hidden = true;
+                    }
+                    input_length--;
+                    input[input_length] = '\0';
+                    render_prompt_input();
+                } else if (event.character >= 32 &&
+                           event.character <= 126 &&
+                           input_length + 1 < MAX_INPUT &&
+                           input_length + 3 < columns) {
+                    if (!cursor_hidden) {
+                        mouse_cursor_erase();
+                        cursor_hidden = true;
+                    }
+                    input[input_length++] = event.character;
+                    input[input_length] = '\0';
+                    render_prompt_input();
+                }
+            }
+        }
+        if (cursor_hidden) {
+            mouse_cursor_draw((uint32_t)mouse_x, (uint32_t)mouse_y);
+        }
+        __asm__ volatile("pause");
     }
 }

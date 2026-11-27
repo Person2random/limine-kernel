@@ -8,6 +8,7 @@ uint64_t height;
 
  void graphics_init(void){
   fb = framebuffer_request.response->framebuffers[0];
+  // Limine picks the pixels; we just try not to make them regret it.
   width = fb->width;
   height = fb->height;
  }
