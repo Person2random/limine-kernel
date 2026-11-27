@@ -3,3 +3,6 @@
 *.iso
 *.hdd
 *.log
+compile_commands.json
+rust-project.json
+
