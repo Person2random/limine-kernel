@@ -35,15 +35,15 @@
 
 #define STACK_SIZE 4096
 static void hcf(void) {
-    for (;;) {
+	for (;;) {
 #if defined (__x86_64__)
-        asm ("sti;hlt");
+		asm ("sti;hlt");
 #elif defined (__aarch64__) || defined (__riscv)
-        asm ("wfi");
+		asm ("wfi");
 #elif defined (__loongarch64)
-        asm ("idle 0");
+		asm ("idle 0");
 #endif
-    }
+	}
 }
 
 
@@ -52,62 +52,42 @@ extern uint64_t rust_test(void);
 // If renaming kmain() to something else, make sure to change the
 // linker script accordingly.
 void kmain(void) {
-   /*
-    // Ensure we got a framebuffer.
-    if (framebuffer_request.response == NULL
-     || framebuffer_request.response->framebuffer_count < 1) {
-        hcf();
-    }
 
-    // Fetch the first framebuffer.
-    struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
+	graphics_init();
+	terminal_init(true);
+	print("Welcome to tung tung larp OS\n");
+	print("Initilazing GDT...\n");
+	init_gdt();
+	print("Initializng IDT...\n");
+	idt_init();
+	init_pmm();
+	print("PMM init\n");
+	valloc_init();
+	print("Valloc init\n");
+	lapic_init();
+	lapic_timer_init();
+	print("Lapic init\n");
+	init_tsc();
+	print("TSC timer init\n");
+	if (!ps2_keyboard_init()) {
+		kernel_panic("Failed to initalize PS/2 keyboard driver",0x3);
+	}
+	print("PS/2 keyboard IRQ ready\n");
+	if (!ps2_mouse_init()) {
+		print("PS/2 mouse unavailable; keyboard controls still work\n");
+	} else {
+		print("PS/2 mouse IRQ ready\n");
+	}
+	__asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
+				 //
 
-    // Print a nice pattern to screen as an example.
-    // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    volatile uint32_t *fb_ptr = framebuffer->address;
-    for (size_t y = 0; y < framebuffer->height; y++) {
-        for (size_t x = 0; x < framebuffer->width; x++) {
-            uint32_t nX = x * 255 / framebuffer->width;
-            uint32_t nY = y * 255 / framebuffer->height;
-            fb_ptr[y * (framebuffer->pitch / 4) + x] = (nY << 8) | nX;
-        }
-    }
-*/
-    graphics_init();
-    terminal_init(true);
-    print("Welcome to tung tung larp OS\n");
-    print("Initilazing GDT...\n");
-    init_gdt();
-    print("Initializng IDT...\n");
-    idt_init();
-    init_pmm();
-    print("PMM init\n");
-    valloc_init();
-    print("Valloc init\n");
-    lapic_init();
-    lapic_timer_init();
-    print("Lapic init\n");
-    init_tsc();
-    print("TSC timer init\n");
-    if (!ps2_keyboard_init()) {
-        print("PS/2 keyboard initialization failed\n");
-        hcf();
-    }
-    print("PS/2 keyboard IRQ ready\n");
-    if (!ps2_mouse_init()) {
-        print("PS/2 mouse unavailable; keyboard controls still work\n");
-    } else {
-        print("PS/2 mouse IRQ ready\n");
-    }
-    __asm__ volatile("sti"); //After enabling the LAPIC and timer subsystem, This would be a great time to set interrupts
-    
-    uint64_t test = rust_test();
-    char buf[32];
-    int_to_base_string(test,buf,16);
-    print(buf);
-    print("\n");
+	if(rust_test() != 0xDEADBEEF){
+		kernel_panic("Interop with other language(s) is unsafe",0x2);
+	}
 
-    print("Done\n");
-    shell_run();
-    hcf();
+	print("Done\n");
+	shell_run();
+	hcf();
+
+
 }
