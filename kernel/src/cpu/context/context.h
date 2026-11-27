@@ -15,7 +15,7 @@ struct thread_context {
     uint64_t rsp;
     uint64_t ss;
 };
-void context_switch(struct thread_context* context,uint8_t ring);
+void context_switch(struct thread_context* context);
 void test_thread(void);
 ;
 ;

@@ -191,7 +191,6 @@ void vmm_unmap(uint64_t virt,uint64_t* pml_p){
   
 }
 
-
 uint64_t vmm_get_phys(uint64_t virt, uint64_t* pml_p){
   uint64_t hhdm_offset = hhdm_request.response->offset;
   uint64_t pml4_index = (virt >> 39) & 0x1FF;

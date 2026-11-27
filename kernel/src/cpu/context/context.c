@@ -6,10 +6,14 @@ void test_thread(void){
   }
 }
 
+
 extern void ring0_context_switch(struct thread_context* context);
-void context_switch(struct thread_context* context,uint8_t ring){
-  if(ring == 0){
+extern void ring3_context_switch(struct thread_context* context);
+void context_switch(struct thread_context* context){
+  if((context->cs & 3) == 3){
     ring0_context_switch(context);
   }
-  
+  else {
+	  ring3_context_switch(context);
+  }
 }

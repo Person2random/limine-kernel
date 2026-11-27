@@ -1,7 +1,8 @@
 bits 64
 global ring0_context_switch
-
+global ring3_context_switch
 ring0_context_switch:
+	cli
         mov rsp, rdi
         pop r15
         pop r14
@@ -25,3 +26,23 @@ ring0_context_switch:
         push qword [rdi+120]
         mov rdi, [rdi+72]
         iretq
+
+ring3_context_switch:
+	cli
+	mov rsp, rdi
+	pop r15
+	pop r14
+	pop r13
+        pop r12
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rbp
+        pop rdi
+	pop rsi
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
+	iretq

@@ -36,19 +36,9 @@ static bool vectors[256];
 void idt_init(void){
   idt_pointer.base = (uintptr_t)&idt[0];
   idt_pointer.limit = (uint16_t)sizeof(idt_entry) * 256 - 1;
-  for (uint8_t vector = 0; vector < 34; vector++) {
+  for (uint8_t vector = 0; vector < 128; vector++) {
     idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
     vectors[vector] = true;
   }
-  idt_set_descriptor(34, isr_stub_table[34], 0x8E);
-  vectors[34] = true;
-  idt_set_descriptor(65, isr_stub_table[65], 0x8E);
-  vectors[65] = true;
-  idt_set_descriptor(76, isr_stub_table[76], 0x8E);
-  vectors[76] = true;
-  idt_set_descriptor(128, isr_stub_table[128], 0xEE);
-  vectors[128] = true;
   __asm__ volatile ("lidt %0": : "m"((idt_pointer)));
- // __asm__ volatile ("sti");
- // Dont place this until you have hardware interrupts
 }

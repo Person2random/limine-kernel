@@ -29,6 +29,12 @@ uint64_t* vmm_get_pte(uint64_t virt, uint64_t* pml_p);
 *@return The start of the 1 TiB range as a virtual address
 */
 uint64_t valloc_find_arena();
+unsigned long read_cr3(void) {
+    unsigned long val;
+    asm volatile("mov %%cr3, %0" : "=r"(val));
+    return val;
+}
+
 ;
 ;
 ;
